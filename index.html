@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aplikasi LPJ Revitalisasi — SMKN 3 Selayar</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  :root{ --brand:#0d3b66; --brand-dark:#092c4d; --accent:#1b6ca8; --chip-bg:#e4eefb; --chip-fg:#1256a0; }
+  [data-tema="hijau_toska"]{ --brand:#0f5257; --brand-dark:#0a3b3f; --accent:#2a9d8f; --chip-bg:#d5f0ec; --chip-fg:#0f5257; }
+  [data-tema="maroon"]{ --brand:#6a1b2a; --brand-dark:#4d121e; --accent:#a63446; --chip-bg:#f6dfe3; --chip-fg:#6a1b2a; }
+  [data-tema="biru_cerah"]{ --brand:#2563eb; --brand-dark:#1e40af; --accent:#60a5fa; --chip-bg:#dbe8ff; --chip-fg:#1e40af; }
+  [data-tema="slate"]{ --brand:#1e293b; --brand-dark:#0f172a; --accent:#475569; --chip-bg:#e2e8f0; --chip-fg:#1e293b; }
+  body{ background:#f4f6f9; font-size:.925rem; }
+  .sidebar{ background:linear-gradient(180deg,var(--brand),var(--brand-dark)); min-height:100vh; width:250px; position:fixed; color:#cdd8e6; overflow-y:auto; transition:margin-left .25s; z-index:1030; }
+  .sidebar .brand{ color:#fff; }
+  .sidebar .brand small{ color:#9fb4cc; }
+  .sidebar .nav-link{ color:#cdd8e6; border-radius:8px; margin:2px 10px; padding:.55rem .85rem; cursor:pointer; }
+  .sidebar .nav-link:hover{ background:rgba(255,255,255,.08); color:#fff; }
+  .sidebar .nav-link.active{ background:#fff; color:var(--brand); font-weight:600; }
+  .sidebar .nav-heading{ color:#7f96b3; font-size:.72rem; letter-spacing:.05em; padding:1rem 1.35rem .35rem; text-transform:uppercase; }
+  .main{ margin-left:250px; transition:margin-left .25s; }
+  body.sidebar-collapsed .sidebar{ margin-left:-250px; }
+  body.sidebar-collapsed .main{ margin-left:0; }
+  .topbar{ background:#fff; border-bottom:1px solid #e3e8ef; position:sticky; top:0; z-index:1020; }
+  .stat-card .icon{ width:46px; height:46px; border-radius:10px; display:grid; place-items:center; font-size:1.3rem; }
+  .card{ border:1px solid #e6eaf0; border-radius:12px; }
+  .table thead th{ background:#f0f3f7; color:#3a4a5e; font-weight:600; font-size:.82rem; border-bottom:2px solid #e3e8ef; }
+  .btn-brand{ background:var(--brand); color:#fff; }
+  .btn-brand:hover{ background:var(--brand-dark); color:#fff; }
+  .chip{ background:var(--chip-bg); color:var(--chip-fg); font-size:.72rem; padding:.28rem .7rem; border-radius:20px; font-weight:500; }
+  .page{ display:none; }
+  .page.active{ display:block; }
+  .login-wrap{ min-height:100vh; display:grid; place-items:center; background:linear-gradient(135deg,var(--brand),var(--brand-dark)); }
+  .login-card{ width:100%; max-width:400px; }
+
+  /* ===== CETAK ===== */
+  @media screen{ .print-area{ display:none; } }
+  @media print{
+    @page{ margin:10mm; }
+    body{ background:#fff; }
+    .sidebar,.topbar,.no-print,.main>.p-4>*:not(.print-area){ display:none !important; }
+    .main{ margin:0 !important; }
+    .print-area{ display:block !important; }
+    .doc{ page-break-after:always; }
+    .doc:last-child{ page-break-after:auto; }
+    .bku-tutup{ page-break-before:always; }
+  }
+  .doc{ font-family:"Times New Roman",serif; color:#000; font-size:12pt; border:1.5px solid #000;
+        padding:16px 18px; margin:0 auto 20px; background:#fff; box-sizing:border-box;
+        width:195mm; min-height:277mm; }
+  @media print{ .doc{ width:auto; min-height:calc(297mm - 20mm - 4px); margin:0; } }
+  .doc.bku-print{ border:none; padding:0; min-height:auto; }
+  @media print{ .doc.bku-print{ min-height:auto; } }
+  .doc .kop{ display:grid; grid-template-columns:90px 1fr 90px; align-items:center; border-bottom:2.5px solid #000; padding-bottom:6px; }
+  .doc .kop img{ max-height:80px; max-width:88px; }
+  .doc .kop .ket{ text-align:center; line-height:1.25; }
+  .doc .kop .ket .l1{ font-weight:bold; font-size:11pt; }
+  .doc .kop .ket .l-sek{ font-weight:bold; font-size:15pt; }
+  .doc .kop .ket .l-alamat{ font-style:italic; font-size:8.5pt; }
+  .doc h3{ text-align:center; text-decoration:underline; font-weight:bold; margin:12px 0 2px; font-size:13pt; }
+  .doc table.items{ width:100%; border-collapse:collapse; margin:8px 0; }
+  .doc table.items th, .doc table.items td{ border:1px solid #000; padding:2px 6px; font-size:11pt; }
+  .doc table.items th{ text-align:center; }
+  .doc .rpcell{ display:flex; justify-content:space-between; }
+  .doc .rpcell .sym{ text-align:left; }
+  .doc .rpcell .val{ text-align:right; }
+  .doc .ttd-row{ display:flex; justify-content:space-between; margin-top:14px; }
+  .doc .ttd{ text-align:left; }
+  .doc .nm{ font-weight:bold; text-decoration:underline; display:inline-block; }
+  .doc .ttd .nm{ margin-top:48px; }
+  .doc .info-list td{ border:0; padding:0 2px; vertical-align:top; }
+</style>
+</head>
+<body data-tema="biru_tua">
+
+<div id="loginView" class="login-wrap">
+  <div class="card login-card shadow-lg border-0">
+    <div class="card-body p-4">
+      <div class="text-center mb-3">
+        <i class="bi bi-buildings" style="font-size:2.5rem; color:var(--brand);"></i>
+        <h5 class="fw-bold mt-2 mb-0">Aplikasi LPJ Revitalisasi</h5>
+        <small class="text-muted">SMKN 3 Kepulauan Selayar</small>
+      </div>
+      <div id="loginError" class="alert alert-danger py-2 d-none"></div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Email</label>
+        <input type="email" id="loginEmail" class="form-control" placeholder="email@contoh.com">
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Password</label>
+        <input type="password" id="loginPass" class="form-control" placeholder="********">
+      </div>
+      <button id="btnLogin" class="btn btn-brand w-100">
+        <span class="spinner-border spinner-border-sm d-none" id="loginSpin"></span>
+        Masuk
+      </button>
+      <p class="text-center text-muted small mt-3 mb-0">Hubungi admin/bendahara untuk akun.</p>
+    </div>
+  </div>
+</div>
+
+<div id="appView" class="d-none">
+  <div class="sidebar d-flex flex-column py-3" id="sidebar">
+    <div class="brand px-3 mb-3 d-flex align-items-center gap-2">
+      <i class="bi bi-buildings fs-3"></i>
+      <div>
+        <div class="fw-bold lh-1">LPJ Revitalisasi</div>
+        <small id="sideSchool">SMKN 3 Selayar</small>
+      </div>
+    </div>
+    <div class="nav-heading">Utama</div>
+    <ul class="nav flex-column">
+      <li><a class="nav-link active" data-page="dashboard"><i class="bi bi-grid me-2"></i>Dashboard</a></li>
+      <li><a class="nav-link" data-page="transaksi"><i class="bi bi-receipt me-2"></i>Transaksi</a></li>
+      <li><a class="nav-link" data-page="penerimaan"><i class="bi bi-cash-coin me-2"></i>Penerimaan</a></li>
+      <li><a class="nav-link" data-page="bku"><i class="bi bi-journal-text me-2"></i>Buku Kas Umum</a></li>
+    </ul>
+    <div class="nav-heading">Master Data</div>
+    <ul class="nav flex-column">
+      <li><a class="nav-link" data-page="toko"><i class="bi bi-shop me-2"></i>Data Toko</a></li>
+      <li><a class="nav-link" data-page="kategori"><i class="bi bi-tags me-2"></i>Kategori</a></li>
+      <li><a class="nav-link" data-page="pajak"><i class="bi bi-percent me-2"></i>Tarif Pajak</a></li>
+    </ul>
+    <div class="nav-heading">Pengaturan</div>
+    <ul class="nav flex-column">
+      <li><a class="nav-link" data-page="profil"><i class="bi bi-building me-2"></i>Profil Sekolah</a></li>
+      <li><a class="nav-link" data-page="format"><i class="bi bi-hash me-2"></i>Format Nomor</a></li>
+      <li><a class="nav-link" data-page="tema"><i class="bi bi-palette me-2"></i>Tema Warna</a></li>
+    </ul>
+  </div>
+
+  <div class="main">
+    <div class="topbar d-flex align-items-center justify-content-between px-4 py-2 no-print">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-sm btn-light" id="btnToggle"><i class="bi bi-list"></i></button>
+        <span class="text-muted"><i class="bi bi-calendar3 me-1"></i><span id="taInfo">TA 2026</span></span>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <span class="chip"><i class="bi bi-shield-lock me-1"></i><span id="roleLabel">-</span></span>
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-circle bg-secondary-subtle d-grid" style="width:34px;height:34px;place-items:center;"><i class="bi bi-person"></i></div>
+          <div class="lh-1"><div class="fw-semibold small" id="userName">-</div></div>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" id="btnLogout"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </div>
+    <div class="p-4">
+      <div id="pages"></div>
+      <div class="print-area" id="printArea"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modalHost"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ================= app.js ================= */
+const SUPABASE_URL  = "https://mhlfuwlxhvwrqxoyhkyy.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1obGZ1d2x4aHZ3cnF4b3loa3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MzA5NDcsImV4cCI6MjEwNTEwNjk0N30.yAhlDWVBu4o5hWfLjTznIznZwMKS5T5al5wd1pDrMHA";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const APP = {
+  user: null, profile: null, sekolah: null,
+  cache: { kategori: [], pajak: [], toko: [], format: [], transaksi: [], penerimaan: [] }
+};
+const isAdmin = () => APP.profile?.role === 'admin';
+
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const rp = (n) => 'Rp ' + (Number(n)||0).toLocaleString('id-ID');
+const num = (n) => (Number(n)||0).toLocaleString('id-ID');
+const esc = (s) => (s??'').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad3 = (n) => String(n).padStart(3,'0');
+const fmtTgl = (d) => { if(!d) return '-'; const t=new Date(d+'T00:00'); return t.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}); };
+function toast(msg, type='success'){
+  const el = document.createElement('div');
+  el.className = `alert alert-${type} position-fixed shadow`;
+  el.style.cssText = 'top:20px;right:20px;z-index:3000;min-width:260px;';
+  el.innerHTML = msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 3000);
+}
+
+function terbilang(n){
+  n = Math.floor(Math.abs(Number(n)||0));
+  const satuan = ['','satu','dua','tiga','empat','lima','enam','tujuh','delapan','sembilan','sepuluh','sebelas'];
+  function konv(x){
+    if(x < 12) return satuan[x];
+    if(x < 20) return konv(x-10)+' belas';
+    if(x < 100) return konv(Math.floor(x/10))+' puluh'+(x%10? ' '+konv(x%10):'');
+    if(x < 200) return 'seratus'+(x-100? ' '+konv(x-100):'');
+    if(x < 1000) return konv(Math.floor(x/100))+' ratus'+(x%100? ' '+konv(x%100):'');
+    if(x < 2000) return 'seribu'+(x-1000? ' '+konv(x-1000):'');
+    if(x < 1000000) return konv(Math.floor(x/1000))+' ribu'+(x%1000? ' '+konv(x%1000):'');
+    if(x < 1000000000) return konv(Math.floor(x/1000000))+' juta'+(x%1000000? ' '+konv(x%1000000):'');
+    if(x < 1000000000000) return konv(Math.floor(x/1000000000))+' miliar'+(x%1000000000? ' '+konv(x%1000000000):'');
+    return konv(Math.floor(x/1000000000000))+' triliun'+(x%1000000000000? ' '+konv(x%1000000000000):'');
+  }
+  if(n===0) return 'Nol Rupiah';
+  let s = konv(n).replace(/\s+/g,' ').trim();
+  s = s.split(' ').map(w=>w? w.charAt(0).toUpperCase()+w.slice(1) : w).join(' ');
+  return s + ' Rupiah';
+}
+
+function nomorDok(jenis, noUrut){
+  const f = APP.cache.format.find(x => x.jenis_dokumen === jenis);
+  const pola = f ? f.pola : '{NO3}';
+  return pola
+    .replaceAll('{NO3}', pad3(noUrut))
+    .replaceAll('{NO}', String(noUrut))
+    .replaceAll('{TAHUN}', APP.sekolah?.tahun_anggaran || '')
+    .replaceAll('{TERMIN}', APP.sekolah?.termin || '');
+}
+
+async function doLogin(){
+  const email = $('#loginEmail').value.trim();
+  const pass  = $('#loginPass').value;
+  const err = $('#loginError');
+  err.classList.add('d-none');
+  if(!email || !pass){ err.textContent='Email dan password wajib diisi.'; err.classList.remove('d-none'); return; }
+  $('#loginSpin').classList.remove('d-none');
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  $('#loginSpin').classList.add('d-none');
+  if(error){ err.textContent = 'Login gagal: ' + error.message; err.classList.remove('d-none'); return; }
+  await afterLogin(data.user);
+}
+async function afterLogin(user){
+  APP.user = user;
+  const { data: prof, error } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if(error || !prof){ toast('Profil user tidak ditemukan. Hubungi admin.', 'danger'); await sb.auth.signOut(); return; }
+  APP.profile = prof;
+  await loadAll();
+  showApp();
+}
+async function doLogout(){
+  await sb.auth.signOut();
+  APP.user = APP.profile = null;
+  $('#appView').classList.add('d-none');
+  $('#loginView').classList.remove('d-none');
+  $('#loginEmail').value = $('#loginPass').value = '';
+}
+
+async function loadAll(){
+  const [sek, kat, paj, tok, fmt, trx, pen] = await Promise.all([
+    sb.from('profil_sekolah').select('*').eq('id',1).single(),
+    sb.from('kategori').select('*').order('urutan'),
+    sb.from('tarif_pajak').select('*').order('id'),
+    sb.from('toko').select('*').order('nama_toko'),
+    sb.from('format_nomor').select('*'),
+    sb.from('transaksi').select('*, kategori(nama), toko(nama_toko,pimpinan,alamat,no_hp)').order('no_urut',{ascending:false}),
+    sb.from('penerimaan').select('*').order('tanggal'),
+  ]);
+  APP.sekolah = sek.data || {};
+  APP.cache.kategori = kat.data || [];
+  APP.cache.pajak = paj.data || [];
+  APP.cache.toko = tok.data || [];
+  APP.cache.format = fmt.data || [];
+  APP.cache.transaksi = trx.data || [];
+  APP.cache.penerimaan = pen.data || [];
+}
+
+function showApp(){
+  $('#loginView').classList.add('d-none');
+  $('#appView').classList.remove('d-none');
+  document.body.setAttribute('data-tema', APP.sekolah?.tema_warna || 'biru_tua');
+  const roleName = { admin:'Admin / Bendahara', ketua_p2sp:'Ketua P2SP', kepsek:'Kepala Sekolah' }[APP.profile.role] || APP.profile.role;
+  $('#roleLabel').textContent = roleName;
+  $('#userName').textContent = APP.profile.nama;
+  $('#taInfo').textContent = `TA ${APP.sekolah?.tahun_anggaran||'-'}`;
+  $('#sideSchool').textContent = APP.sekolah?.nama_sekolah || 'SMKN 3 Selayar';
+  applyRoleUI();
+  buildPages();
+  goto('dashboard');
+}
+
+function applyRoleUI(){
+  const nonAdminMenus = ['dashboard','transaksi','bku'];
+  $$('.sidebar .nav-link').forEach(a=>{
+    const p = a.dataset.page;
+    if(!isAdmin() && !nonAdminMenus.includes(p)) a.parentElement.style.display='none';
+    else a.parentElement.style.display='';
+  });
+}
+
+function goto(page){
+  $$('.sidebar .nav-link').forEach(a=>a.classList.toggle('active', a.dataset.page===page));
+  $$('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+page));
+  const fn = RENDER[page];
+  if(fn) fn();
+  window.scrollTo(0,0);
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  $('#btnLogin').addEventListener('click', doLogin);
+  $('#loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+  $('#btnLogout').addEventListener('click', doLogout);
+  $('#btnToggle').addEventListener('click', ()=>document.body.classList.toggle('sidebar-collapsed'));
+  $$('.sidebar .nav-link').forEach(a=>a.addEventListener('click', ()=>goto(a.dataset.page)));
+  sb.auth.getSession().then(({data})=>{ if(data.session) afterLogin(data.session.user); });
+});
+
+/* ================= app-pages.js ================= */
+const RENDER = {};
+
+function buildPages(){
+  const host = document.getElementById('pages');
+  host.innerHTML = `
+    <div id="page-dashboard" class="page"></div>
+    <div id="page-transaksi" class="page"></div>
+    <div id="page-penerimaan" class="page"></div>
+    <div id="page-bku" class="page"></div>
+    <div id="page-toko" class="page"></div>
+    <div id="page-kategori" class="page"></div>
+    <div id="page-pajak" class="page"></div>
+    <div id="page-profil" class="page"></div>
+    <div id="page-format" class="page"></div>
+    <div id="page-tema" class="page"></div>
+  `;
+}
+
+RENDER.dashboard = function(){
+  const trx = APP.cache.transaksi;
+  let totalPajak=0;
+  trx.forEach(t=>{ totalPajak += Number(t.nilai_pajak)||0; });
+  const el = document.getElementById('page-dashboard');
+  el.innerHTML = `
+    <h5 class="fw-bold mb-3">Dashboard</h5>
+    <div class="row g-3 mb-4">
+      ${statCard('Total Transaksi', trx.length, 'bi-receipt', 'primary')}
+      ${statCard('Total Item', '<span id="dashItem">…</span>', 'bi-box-seam', 'info')}
+      ${statCard('Total Nilai', '<span id="dashNilai">…</span>', 'bi-cash-stack', 'success')}
+      ${statCard('Total Pajak', rp(totalPajak), 'bi-percent', 'warning')}
+    </div>
+    <div class="card">
+      <div class="card-header bg-white fw-bold py-3"><i class="bi bi-clock-history me-2"></i>Transaksi Terbaru</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th class="ps-3">No</th><th>Uraian</th><th>Kategori</th><th>Toko</th><th class="text-end pe-3">Nilai</th></tr></thead>
+          <tbody id="dashRows"><tr><td colspan="5" class="text-center text-muted py-4">Memuat…</td></tr></tbody>
+        </table>
+      </div>
+    </div>`;
+  sb.from('transaksi_item').select('jumlah, transaksi_id').then(({data})=>{
+    const items = data||[];
+    const nilai = items.reduce((a,b)=>a+(Number(b.jumlah)||0),0);
+    document.getElementById('dashItem').textContent = items.length;
+    document.getElementById('dashNilai').textContent = rp(nilai);
+    const byTrx = {};
+    items.forEach(i=>{ byTrx[i.transaksi_id]=(byTrx[i.transaksi_id]||0)+(Number(i.jumlah)||0); });
+    const rows = trx.slice(0,5).map(t=>`
+      <tr><td class="ps-3">${pad3(t.no_urut)}</td>
+      <td>${esc(t.uraian||'-')}</td>
+      <td><span class="chip">${esc(t.kategori?.nama||'-')}</span></td>
+      <td>${esc(t.toko?.nama_toko||'-')}</td>
+      <td class="text-end pe-3 fw-semibold">${rp(byTrx[t.id]||0)}</td></tr>`).join('');
+    document.getElementById('dashRows').innerHTML = rows || `<tr><td colspan="5" class="text-center text-muted py-4">Belum ada transaksi.</td></tr>`;
+  });
+};
+function statCard(label, val, icon, color){
+  return `<div class="col-md-3"><div class="card stat-card p-3"><div class="d-flex justify-content-between">
+    <div><div class="text-muted small">${label}</div><div class="fs-5 fw-bold">${val}</div></div>
+    <div class="icon bg-${color}-subtle text-${color}"><i class="bi ${icon}"></i></div></div></div></div>`;
+}
+
+RENDER.transaksi = function(){
+  const el = document.getElementById('page-transaksi');
+  el.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">Transaksi</h5>
+      ${isAdmin()? `<button class="btn btn-brand btn-sm" onclick="formTransaksi()"><i class="bi bi-plus-lg me-1"></i>Transaksi Baru</button>`:''}
+    </div>
+    <div class="card">
+      <div class="card-header bg-white py-2">
+        <div class="input-group input-group-sm" style="max-width:320px;">
+          <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+          <input type="text" id="cariTrx" class="form-control" placeholder="Cari uraian / toko / kategori...">
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th class="ps-3">No</th><th>Uraian</th><th>Kategori</th><th>Toko</th><th class="text-end">Nilai</th><th class="text-center">Aksi</th></tr></thead>
+          <tbody id="trxRows"></tbody>
+        </table>
+      </div>
+    </div>`;
+  const draw = (filter='')=>{
+    const f = filter.toLowerCase();
+    const rows = APP.cache.transaksi.filter(t=>
+      (t.uraian||'').toLowerCase().includes(f) ||
+      (t.toko?.nama_toko||'').toLowerCase().includes(f) ||
+      (t.kategori?.nama||'').toLowerCase().includes(f)
+    );
+    document.getElementById('trxRows').innerHTML = rows.length? rows.map(t=>`
+      <tr>
+        <td class="ps-3">${pad3(t.no_urut)}</td>
+        <td>${esc(t.uraian||'-')}</td>
+        <td><span class="chip">${esc(t.kategori?.nama||'-')}</span></td>
+        <td>${esc(t.toko?.nama_toko||'-')}</td>
+        <td class="text-end fw-semibold" id="nilai-${t.id}">…</td>
+        <td class="text-center">
+          <button class="btn btn-sm btn-outline-primary" onclick="pilihCetak(${t.id})" title="Cetak"><i class="bi bi-printer"></i></button>
+          ${isAdmin()? `<button class="btn btn-sm btn-outline-secondary" onclick="formTransaksi(${t.id})" title="Edit"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger" onclick="hapusTransaksi(${t.id})" title="Hapus"><i class="bi bi-trash"></i></button>`:''}
+        </td>
+      </tr>`).join('') : `<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada data.</td></tr>`;
+    rows.forEach(t=> sb.from('transaksi_item').select('jumlah').eq('transaksi_id',t.id).then(({data})=>{
+      const s=(data||[]).reduce((a,b)=>a+(Number(b.jumlah)||0),0);
+      const c=document.getElementById('nilai-'+t.id); if(c) c.textContent=rp(s);
+    }));
+  };
+  draw();
+  document.getElementById('cariTrx').addEventListener('input', e=>draw(e.target.value));
+};
+
+async function hapusTransaksi(id){
+  if(!isAdmin()) return;
+  if(!confirm('Hapus transaksi ini beserta semua itemnya?')) return;
+  const { error } = await sb.from('transaksi').delete().eq('id',id);
+  if(error){ toast('Gagal hapus: '+error.message,'danger'); return; }
+  await loadAll(); RENDER.transaksi(); toast('Transaksi dihapus.');
+}
+
+/* ===== PENERIMAAN ===== */
+RENDER.penerimaan = function(){
+  const el = document.getElementById('page-penerimaan');
+  const rows = APP.cache.penerimaan||[];
+  el.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">Penerimaan (Dana Masuk)</h5>
+      ${isAdmin()? `<button class="btn btn-brand btn-sm" onclick="formPenerimaan()"><i class="bi bi-plus-lg me-1"></i>Tambah Penerimaan</button>`:''}
+    </div>
+    <div class="card"><div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr><th class="ps-3">Tanggal</th><th>Uraian</th><th>No. Bukti</th><th class="text-end">Jumlah</th><th>Scan Bukti</th>${isAdmin()?'<th class="text-center">Aksi</th>':''}</tr></thead>
+        <tbody>${rows.length? rows.map(r=>`<tr>
+          <td class="ps-3">${fmtTgl(r.tanggal)}</td>
+          <td>${esc(r.uraian||'-')}</td>
+          <td>${esc(r.no_bukti||'-')}</td>
+          <td class="text-end fw-semibold">${rp(r.jumlah)}</td>
+          <td>${r.link_bukti? `<a href="${esc(r.link_bukti)}" target="_blank"><i class="bi bi-link-45deg"></i> Lihat</a>`:'-'}</td>
+          ${isAdmin()? `<td class="text-center">
+            <button class="btn btn-sm btn-outline-secondary" onclick="formPenerimaan(${r.id})"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="hapusPenerimaan(${r.id})"><i class="bi bi-trash"></i></button>
+          </td>`:''}
+        </tr>`).join('') : `<tr><td colspan="6" class="text-center text-muted py-4">Belum ada data penerimaan.</td></tr>`}
+        </tbody>
+      </table>
+    </div></div>`;
+};
+
+function formPenerimaan(id){
+  if(!isAdmin()) return;
+  const r = id? (APP.cache.penerimaan.find(x=>x.id===id)||{}) : {};
+  const body = `
+    <div class="mb-3"><label class="form-label small fw-semibold">Tanggal</label>
+      <input type="date" class="form-control" id="pn-tanggal" value="${r.tanggal||''}"></div>
+    <div class="mb-3"><label class="form-label small fw-semibold">Uraian <span class="text-danger">*</span></label>
+      <textarea class="form-control" id="pn-uraian" rows="2">${esc(r.uraian||'')}</textarea></div>
+    <div class="row">
+      <div class="col-md-4 mb-3"><label class="form-label small fw-semibold">No. Bukti</label>
+        <input class="form-control" id="pn-no_bukti" value="${esc(r.no_bukti||'')}" placeholder="mis. 001"></div>
+      <div class="col-md-8 mb-3"><label class="form-label small fw-semibold">Jumlah (Rp)</label>
+        <input type="number" step="any" class="form-control" id="pn-jumlah" value="${r.jumlah||''}"></div>
+    </div>
+    <div class="mb-2"><label class="form-label small fw-semibold">Link Scan Bukti (Google Drive)</label>
+      <input class="form-control" id="pn-link_bukti" value="${esc(r.link_bukti||'')}" placeholder="https://drive.google.com/..."></div>`;
+  showModal((id?'Edit':'Tambah')+' Penerimaan', body, async ()=>{
+    const payload = {
+      tanggal: document.getElementById('pn-tanggal').value||null,
+      uraian: document.getElementById('pn-uraian').value.trim()||null,
+      no_bukti: document.getElementById('pn-no_bukti').value.trim()||null,
+      jumlah: Number(document.getElementById('pn-jumlah').value)||0,
+      link_bukti: document.getElementById('pn-link_bukti').value.trim()||null,
+    };
+    if(!payload.uraian){ toast('Uraian wajib diisi.','danger'); return false; }
+    const q = id? sb.from('penerimaan').update(payload).eq('id',id) : sb.from('penerimaan').insert(payload);
+    const { error } = await q;
+    if(error){ toast('Gagal simpan: '+error.message,'danger'); return false; }
+    await loadAll(); RENDER.penerimaan(); toast('Penerimaan disimpan.'); return true;
+  });
+}
+async function hapusPenerimaan(id){
+  if(!isAdmin()) return;
+  if(!confirm('Hapus data penerimaan ini?')) return;
+  const { error } = await sb.from('penerimaan').delete().eq('id',id);
+  if(error){ toast('Gagal hapus: '+error.message,'danger'); return; }
+  await loadAll(); RENDER.penerimaan(); toast('Penerimaan dihapus.');
+}
+
+/* ===== BUKU KAS UMUM ===== */
+async function bkuRows(){
+  const pen = (APP.cache.penerimaan||[]).map(p=>({
+    tipe:'in', tanggal:p.tanggal, uraian:p.uraian, no_bukti:p.no_bukti, jumlah:Number(p.jumlah)||0, link:p.link_bukti
+  }));
+  const { data: items } = await sb.from('transaksi_item').select('transaksi_id, jumlah');
+  const totByTrx = {};
+  (items||[]).forEach(i=>{ totByTrx[i.transaksi_id]=(totByTrx[i.transaksi_id]||0)+(Number(i.jumlah)||0); });
+  const out = (APP.cache.transaksi||[]).map(t=>({
+    tipe:'out', tanggal:t.tgl_kuitansi||t.tgl_nota, uraian:t.uraian, no_bukti:t.no_bukti, jumlah:totByTrx[t.id]||0, link:t.link_bukti
+  }));
+  const all = [...pen, ...out].sort((a,b)=>{
+    if(!a.tanggal) return 1; if(!b.tanggal) return -1;
+    return new Date(a.tanggal) - new Date(b.tanggal);
+  });
+  return all;
+}
+
+RENDER.bku = async function(){
+  const el = document.getElementById('page-bku');
+  el.innerHTML = `<h5 class="fw-bold mb-3">Buku Kas Umum</h5><div class="text-muted">Memuat…</div>`;
+  const rows = await bkuRows();
+  let saldo = 0, totIn=0, totOut=0;
+  const trBody = rows.map(r=>{
+    if(r.tipe==='in'){ saldo += r.jumlah; totIn += r.jumlah; }
+    else { saldo -= r.jumlah; totOut += r.jumlah; }
+    return `<tr>
+      <td>${r.tipe==='in'? fmtTglShort(r.tanggal):''}</td>
+      <td>${r.tipe==='in'? esc(r.uraian||''):''}</td>
+      <td class="text-center">${r.tipe==='in'? esc(r.no_bukti||''):''}</td>
+      <td class="text-end">${r.tipe==='in'? num(r.jumlah):''}</td>
+      <td>${r.tipe==='out'? fmtTglShort(r.tanggal):''}</td>
+      <td>${r.tipe==='out'? esc(r.uraian||''):''}</td>
+      <td class="text-center">${r.tipe==='out'? esc(r.no_bukti||''):''}</td>
+      <td class="text-end">${r.tipe==='out'? num(r.jumlah):''}</td>
+      <td class="text-end">${num(saldo)}</td>
+      <td class="text-center">${r.link? `<a href="${esc(r.link)}" target="_blank">Lihat</a>`:''}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+      <h5 class="fw-bold mb-0">Buku Kas Umum</h5>
+      <button class="btn btn-brand btn-sm" onclick="cetakBKU()"><i class="bi bi-printer me-1"></i>Cetak BKU</button>
+    </div>
+    <div class="card"><div class="card-body">
+      <div class="alert alert-light border small mb-3">
+        Penerimaan otomatis dari menu <b>Penerimaan</b>; Pengeluaran otomatis dari menu <b>Transaksi</b>.
+        Saat mencetak, pilih <b>Layout: Landscape</b> bila belum otomatis.
+      </div>
+      <div class="table-responsive"><table class="table table-bordered table-sm align-middle" style="font-size:.82rem">
+        <thead class="text-center">
+          <tr>
+            <th colspan="4">PENERIMAAN</th>
+            <th colspan="4">PENGELUARAN</th>
+            <th rowspan="2" class="align-middle">SALDO</th>
+            <th rowspan="2" class="align-middle">SCAN BUKTI</th>
+          </tr>
+          <tr>
+            <th>Tanggal</th><th>Uraian</th><th>No.Bukti</th><th>Jumlah</th>
+            <th>Tanggal</th><th>Uraian</th><th>No.Bukti</th><th>Jumlah</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${trBody}
+          <tr class="fw-bold">
+            <td colspan="3" class="text-end">JUMLAH</td><td class="text-end">${num(totIn)}</td>
+            <td colspan="3" class="text-end">JUMLAH</td><td class="text-end">${num(totOut)}</td>
+            <td class="text-end">${num(saldo)}</td><td></td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div></div>`;
+};
+
+function fmtTglShort(d){ if(!d) return ''; const t=new Date(d+'T00:00'); return t.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+
+function hariTgl2(d){
+  if(!d) return '.....................';
+  const t=new Date(d+'T00:00');
+  const hari=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][t.getDay()];
+  return `${hari} Tanggal ${fmtTgl(d)}`;
+}
+
+async function cetakBKU(){
+  const rows = await bkuRows();
+  const s = APP.sekolah||{};
+  let saldo = 0, totIn=0, totOut=0;
+  const body = rows.map(r=>{
+    if(r.tipe==='in'){ saldo+=r.jumlah; totIn+=r.jumlah; } else { saldo-=r.jumlah; totOut+=r.jumlah; }
+    return `<tr>
+      <td>${r.tipe==='in'?fmtTglShort(r.tanggal):''}</td><td>${r.tipe==='in'?esc(r.uraian||''):''}</td>
+      <td style="text-align:center">${r.tipe==='in'?esc(r.no_bukti||''):''}</td><td style="text-align:right">${r.tipe==='in'?num(r.jumlah):''}</td>
+      <td>${r.tipe==='out'?fmtTglShort(r.tanggal):''}</td><td>${r.tipe==='out'?esc(r.uraian||''):''}</td>
+      <td style="text-align:center">${r.tipe==='out'?esc(r.no_bukti||''):''}</td><td style="text-align:right">${r.tipe==='out'?num(r.jumlah):''}</td>
+      <td style="text-align:right">${num(saldo)}</td>
+      <td style="text-align:center;font-size:8pt">${r.link?esc(r.link):''}</td>
+    </tr>`;
+  }).join('');
+  const tglTutupRaw = rows.filter(r=>r.tanggal).map(r=>r.tanggal).sort().pop();
+
+  const html = `
+  <div class="doc bku-print">
+    <h3 style="text-decoration:none;margin-top:0">BUKU KAS UMUM</h3>
+    <table class="items" style="font-size:9pt">
+      <thead style="text-align:center">
+        <tr><th colspan="4">PENERIMAAN</th><th colspan="4">PENGELUARAN</th><th rowspan="2">SALDO</th><th rowspan="2">SCAN BUKTI</th></tr>
+        <tr><th>Tanggal</th><th>Uraian</th><th>No.Bukti</th><th>Jumlah (Rp.)</th><th>Tanggal</th><th>Uraian</th><th>No. Bukti</th><th>Jumlah (Rp.)</th></tr>
+      </thead>
+      <tbody>
+        ${body}
+        <tr style="font-weight:bold">
+          <td colspan="3" style="text-align:right">JUMLAH</td><td style="text-align:right">${num(totIn)}</td>
+          <td colspan="3" style="text-align:right">JUMLAH</td><td style="text-align:right">${num(totOut)}</td>
+          <td style="text-align:right">${num(saldo)}</td><td></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="bku-tutup">
+    <p style="margin-top:14px">Pada hari ini : ${hariTgl2(tglTutupRaw)} Buku Kas Umum ditutup dengan keadaan/posisi Buku sebagai berikut :</p>
+    <table class="items" style="width:70%;margin:8px 0">
+      <tr><td style="width:55%;font-weight:bold">Saldo Buku Kas Umum</td><td>${saldo===0?'<span style="font-style:italic">Nihil</span>':`<div class="rpcell"><span class="sym">Rp</span><span class="val">${num(saldo)}</span></div>`}</td></tr>
+      <tr><td style="font-style:italic">Terdiri Dari</td><td></td></tr>
+      <tr><td style="font-style:italic">1. Saldo BANK</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">${num(saldo)}</span></div></td></tr>
+      <tr><td style="font-style:italic">2. Saldo Kas Tunai</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">0</span></div></td></tr>
+      <tr><td style="font-style:italic">Jumlah</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">${num(saldo)}</span></div></td></tr>
+      <tr><td style="font-style:italic">Perbedaan</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">0</span></div></td></tr>
+    </table>
+    <table style="width:100%;margin-top:20px">
+      <tr>
+        <td style="width:34%;text-align:left;vertical-align:top">Mengetahui<br>Kepala ${esc(s.nama_sekolah||'')}<div style="height:60px"></div><span class="nm">${esc(s.kepsek||'')}</span><br>NIP. ${esc(s.nip_kepsek||'')}</td>
+        <td style="width:33%;text-align:left;vertical-align:top"><br>Ketua P2SP ${esc(s.nama_sekolah||'')}<div style="height:60px"></div><span class="nm">${esc(s.ketua_p2sp||'')}</span><br>${s.nip_ketua_p2sp?('NIP. '+esc(s.nip_ketua_p2sp)):''}</td>
+        <td style="width:33%;text-align:left;vertical-align:top"><br>Bendahara P2SP ${esc(s.nama_sekolah||'')}<div style="height:60px"></div><span class="nm">${esc(s.bendahara||'')}</span><br>NIP. ${esc(s.nip_bendahara||'')}</td>
+      </tr>
+    </table>
+    </div>
+  </div>`;
+  document.getElementById('printArea').innerHTML = html;
+  document.body.classList.add('print-bku');
+  setTimeout(()=>{ window.print(); setTimeout(()=>document.body.classList.remove('print-bku'), 800); }, 300);
+}
+
+/* ===== MASTER ===== */
+function masterPage(cfg){
+  const el = document.getElementById('page-'+cfg.page);
+  const rows = APP.cache[cfg.cacheKey]||[];
+  el.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">${cfg.title}</h5>
+      ${isAdmin()? `<button class="btn btn-brand btn-sm" onclick='masterForm("${cfg.page}")'><i class="bi bi-plus-lg me-1"></i>Tambah</button>`:''}
+    </div>
+    <div class="card"><div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr>${cfg.cols.map(c=>`<th>${c.label}</th>`).join('')}${isAdmin()?'<th class="text-center">Aksi</th>':''}</tr></thead>
+        <tbody>${rows.length? rows.map(r=>`<tr>
+          ${cfg.cols.map(c=>`<td>${fmtCell(r[c.key], c.type)}</td>`).join('')}
+          ${isAdmin()? `<td class="text-center">
+            <button class="btn btn-sm btn-outline-secondary" onclick='masterForm("${cfg.page}",${r.id})'><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick='masterDelete("${cfg.page}",${r.id})'><i class="bi bi-trash"></i></button>
+          </td>`:''}
+        </tr>`).join('') : `<tr><td colspan="99" class="text-center text-muted py-4">Belum ada data.</td></tr>`}
+        </tbody>
+      </table>
+    </div></div>`;
+}
+function fmtCell(v, type){
+  if(type==='money') return rp(v);
+  if(type==='percent') return ((Number(v)||0)*100).toFixed(2).replace(/\.00$/,'')+'%';
+  if(type==='bool') return v? '<i class="bi bi-check-circle-fill text-success"></i>':'<i class="bi bi-dash-circle text-muted"></i>';
+  return esc(v??'-');
+}
+
+const MASTER_CFG = {
+  toko: { title:'Data Toko', page:'toko', table:'toko', cacheKey:'toko',
+    cols:[{key:'nama_toko',label:'Nama Toko'},{key:'pimpinan',label:'Pimpinan'},{key:'alamat',label:'Alamat'},{key:'no_hp',label:'No. HP'}],
+    fields:[{key:'nama_toko',label:'Nama Toko',req:true},{key:'pimpinan',label:'Nama Pimpinan'},{key:'alamat',label:'Alamat'},{key:'no_hp',label:'No. HP'}] },
+  pajak: { title:'Tarif Pajak', page:'pajak', table:'tarif_pajak', cacheKey:'pajak',
+    cols:[{key:'nama',label:'Nama'},{key:'golongan',label:'Golongan'},{key:'persen',label:'Tarif',type:'percent'},{key:'aktif',label:'Aktif',type:'bool'}],
+    fields:[{key:'nama',label:'Nama Tarif',req:true},{key:'golongan',label:'Golongan'},{key:'persen',label:'Tarif (desimal, mis. 0.05 = 5%)',type:'number'},{key:'aktif',label:'Aktif',type:'checkbox',def:true}] },
+  kategori: { title:'Kategori', page:'kategori', table:'kategori', cacheKey:'kategori',
+    cols:[{key:'nama',label:'Nama'},{key:'butuh_pajak',label:'Pajak',type:'bool'},{key:'butuh_toko',label:'Via Toko',type:'bool'},{key:'dok_kuitansi_upah',label:'Kuitansi Upah',type:'bool'},{key:'aktif',label:'Aktif',type:'bool'}],
+    fields:[
+      {key:'nama',label:'Nama Kategori',req:true},
+      {key:'butuh_pajak',label:'Kena pajak?',type:'checkbox'},
+      {key:'butuh_toko',label:'Transaksi via toko/rekanan?',type:'checkbox',def:true},
+      {key:'_sep',label:'Dokumen yang bisa dicetak:',type:'sep'},
+      {key:'dok_nota',label:'Nota Pesanan',type:'checkbox',def:true},
+      {key:'dok_faktur',label:'Faktur',type:'checkbox',def:true},
+      {key:'dok_ba_periksa',label:'BA Pemeriksaan',type:'checkbox',def:true},
+      {key:'dok_ba_serah',label:'BA Serah Terima',type:'checkbox',def:true},
+      {key:'dok_kuitansi_toko',label:'Kuitansi Toko',type:'checkbox',def:true},
+      {key:'dok_kuitansi_upah',label:'Kuitansi Upah/Honor',type:'checkbox'},
+      {key:'aktif',label:'Aktif',type:'checkbox',def:true},
+    ] },
+};
+RENDER.toko     = ()=>masterPage(MASTER_CFG.toko);
+RENDER.pajak    = ()=>masterPage(MASTER_CFG.pajak);
+RENDER.kategori = ()=>masterPage(MASTER_CFG.kategori);
+
+function masterForm(page, id){
+  const cfg = MASTER_CFG[page];
+  const row = id? APP.cache[cfg.cacheKey].find(r=>r.id===id) : {};
+  const body = cfg.fields.map(f=>{
+    if(f.type==='sep') return `<hr><div class="fw-semibold small text-muted mb-2">${f.label}</div>`;
+    if(f.type==='checkbox'){
+      const on = id? row[f.key] : (f.def||false);
+      return `<div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="fld-${f.key}" ${on?'checked':''}><label class="form-check-label" for="fld-${f.key}">${f.label}</label></div>`;
+    }
+    const val = id? (row[f.key]??'') : '';
+    return `<div class="mb-3"><label class="form-label small fw-semibold">${f.label}${f.req?' <span class="text-danger">*</span>':''}</label>
+      <input type="${f.type==='number'?'number':'text'}" ${f.type==='number'?'step="any"':''} class="form-control" id="fld-${f.key}" value="${esc(val)}"></div>`;
+  }).join('');
+  showModal((id?'Edit ':'Tambah ')+cfg.title, body, async ()=>{
+    const payload={};
+    let ok=true;
+    cfg.fields.forEach(f=>{
+      if(f.type==='sep') return;
+      const inp=document.getElementById('fld-'+f.key);
+      if(f.type==='checkbox') payload[f.key]=inp.checked;
+      else if(f.type==='number') payload[f.key]=inp.value===''?null:Number(inp.value);
+      else { payload[f.key]=inp.value.trim()||null; if(f.req && !payload[f.key]) ok=false; }
+    });
+    if(!ok){ toast('Lengkapi field wajib (*).','danger'); return false; }
+    const q = id? sb.from(cfg.table).update(payload).eq('id',id) : sb.from(cfg.table).insert(payload);
+    const { error } = await q;
+    if(error){ toast('Gagal simpan: '+error.message,'danger'); return false; }
+    await loadAll(); RENDER[page](); toast('Data disimpan.'); return true;
+  });
+}
+async function masterDelete(page, id){
+  const cfg = MASTER_CFG[page];
+  if(!confirm('Hapus data ini?')) return;
+  const { error } = await sb.from(cfg.table).delete().eq('id',id);
+  if(error){ toast('Gagal hapus: '+error.message,'danger'); return; }
+  await loadAll(); RENDER[page](); toast('Data dihapus.');
+}
+
+/* ===== PENGATURAN ===== */
+RENDER.profil = function(){
+  const s = APP.sekolah||{};
+  const ro = isAdmin()? '' : 'disabled';
+  const el = document.getElementById('page-profil');
+  const F=(k,l,val)=>`<div class="col-md-6 mb-3"><label class="form-label small fw-semibold">${l}</label><input class="form-control" id="ps-${k}" value="${esc(val??'')}" ${ro}></div>`;
+  el.innerHTML = `
+    <h5 class="fw-bold mb-3">Profil Sekolah</h5>
+    <div class="card"><div class="card-body">
+      <div class="fw-semibold text-muted small mb-2">KOP DOKUMEN</div>
+      <div class="row">
+        ${F('baris_kop_1','Baris KOP 1',s.baris_kop_1)}
+        ${F('baris_kop_2','Baris KOP 2',s.baris_kop_2)}
+        ${F('baris_kop_3','Baris KOP 3',s.baris_kop_3)}
+        ${F('nama_sekolah_kop','Nama Sekolah di KOP (huruf besar)',s.nama_sekolah_kop)}
+        ${F('nama_sekolah','Nama Sekolah di Tanda Tangan',s.nama_sekolah)}
+        <div class="col-12 mb-3"><label class="form-label small fw-semibold">Alamat</label><input class="form-control" id="ps-alamat_sekolah" value="${esc(s.alamat_sekolah||'')}" ${ro}></div>
+        ${F('email_sekolah','Email',s.email_sekolah)}
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3"><label class="form-label small fw-semibold">Logo Pemerintah (kiri)</label>
+          <div class="d-flex align-items-center gap-2">
+            <img id="prevLogoPem" src="${s.logo_pemerintah_url||''}" style="height:48px;${s.logo_pemerintah_url?'':'display:none'}">
+            ${isAdmin()?`<input type="file" accept="image/*" class="form-control" id="fileLogoPem" onchange="uploadLogo('pemerintah')">`:''}
+          </div></div>
+        <div class="col-md-6 mb-3"><label class="form-label small fw-semibold">Logo Sekolah (kanan)</label>
+          <div class="d-flex align-items-center gap-2">
+            <img id="prevLogoSek" src="${s.logo_sekolah_url||''}" style="height:48px;${s.logo_sekolah_url?'':'display:none'}">
+            ${isAdmin()?`<input type="file" accept="image/*" class="form-control" id="fileLogoSek" onchange="uploadLogo('sekolah')">`:''}
+          </div></div>
+      </div>
+      <hr>
+      <div class="fw-semibold text-muted small mb-2">PENANDATANGAN</div>
+      <div class="row">
+        ${F('kepsek','Nama Kepala Sekolah (+ gelar)',s.kepsek)}
+        ${F('nip_kepsek','NIP Kepala Sekolah',s.nip_kepsek)}
+        ${F('ketua_p2sp','Nama Ketua P2SP (+ gelar)',s.ketua_p2sp)}
+        ${F('nip_ketua_p2sp','NIP Ketua P2SP',s.nip_ketua_p2sp)}
+        ${F('jabatan_ketua_p2sp','Jabatan Ketua P2SP',s.jabatan_ketua_p2sp)}
+        ${F('bendahara','Nama Bendahara (+ gelar)',s.bendahara)}
+        ${F('nip_bendahara','NIP Bendahara',s.nip_bendahara)}
+        ${F('jabatan_bendahara','Jabatan Bendahara',s.jabatan_bendahara)}
+        ${F('pangkat_bendahara','Pangkat/Gol.',s.pangkat_bendahara)}
+      </div>
+      <hr>
+      <div class="fw-semibold text-muted small mb-2">ANGGARAN</div>
+      <div class="row">
+        ${F('tahun_anggaran','Tahun Anggaran',s.tahun_anggaran)}
+        ${F('kota_ttd','Kota Tanda Tangan',s.kota_ttd)}
+      </div>
+      ${isAdmin()? `<button class="btn btn-brand" onclick="simpanProfil()"><i class="bi bi-save me-1"></i>Simpan Profil</button>`:'<div class="alert alert-info py-2 mb-0"><i class="bi bi-eye me-1"></i>Anda hanya dapat melihat.</div>'}
+    </div></div>`;
+};
+async function simpanProfil(){
+  if(!isAdmin()) return;
+  const keys=['baris_kop_1','baris_kop_2','baris_kop_3','nama_sekolah_kop','nama_sekolah','alamat_sekolah','email_sekolah','kepsek','nip_kepsek','ketua_p2sp','nip_ketua_p2sp','jabatan_ketua_p2sp','bendahara','nip_bendahara','jabatan_bendahara','pangkat_bendahara','tahun_anggaran','kota_ttd'];
+  const payload={}; keys.forEach(k=>payload[k]=document.getElementById('ps-'+k).value.trim()||null);
+  const { error } = await sb.from('profil_sekolah').update(payload).eq('id',1);
+  if(error){ toast('Gagal simpan: '+error.message,'danger'); return; }
+  await loadAll(); showApp(); goto('profil'); toast('Profil disimpan.');
+}
+async function uploadLogo(which){
+  if(!isAdmin()) return;
+  const inp = document.getElementById(which==='pemerintah'?'fileLogoPem':'fileLogoSek');
+  const file = inp.files[0]; if(!file) return;
+  const path = `logo/${which}-${Date.now()}.${file.name.split('.').pop()}`;
+  const { error } = await sb.storage.from('logo').upload(path, file, {upsert:true});
+  if(error){ toast('Gagal upload: '+error.message,'danger'); return; }
+  const { data } = sb.storage.from('logo').getPublicUrl(path);
+  const col = which==='pemerintah'?'logo_pemerintah_url':'logo_sekolah_url';
+  await sb.from('profil_sekolah').update({[col]:data.publicUrl}).eq('id',1);
+  await loadAll(); goto('profil'); toast('Logo diperbarui.');
+}
+
+RENDER.format = function(){
+  const el = document.getElementById('page-format');
+  const label = { nota:'Nota Pesanan', faktur:'Faktur', ba_periksa:'BA Pemeriksaan', ba_serah:'BA Serah Terima', kuitansi_toko:'Kuitansi Toko', kuitansi_upah:'Kuitansi Upah' };
+  const rows = APP.cache.format.map(f=>`
+    <div class="mb-3"><label class="form-label small fw-semibold">${label[f.jenis_dokumen]||f.jenis_dokumen}</label>
+    <input class="form-control font-monospace" id="fmt-${f.jenis_dokumen}" value="${esc(f.pola)}" ${isAdmin()?'':'disabled'}></div>`).join('');
+  el.innerHTML = `
+    <h5 class="fw-bold mb-3">Format Nomor Dokumen</h5>
+    <div class="card"><div class="card-body">
+      <div class="alert alert-light border small"><b>Placeholder:</b>
+        <code>{NO3}</code> nomor urut 3 digit (003) &middot; <code>{NO}</code> nomor urut &middot;
+        <code>{TAHUN}</code> tahun anggaran &middot; <code>{TERMIN}</code> termin</div>
+      ${rows}
+      ${isAdmin()? `<button class="btn btn-brand" onclick="simpanFormat()"><i class="bi bi-save me-1"></i>Simpan Format</button>`:''}
+    </div></div>`;
+};
+async function simpanFormat(){
+  if(!isAdmin()) return;
+  for(const f of APP.cache.format){
+    const val=document.getElementById('fmt-'+f.jenis_dokumen).value.trim();
+    await sb.from('format_nomor').update({pola:val}).eq('jenis_dokumen',f.jenis_dokumen);
+  }
+  await loadAll(); toast('Format nomor disimpan.');
+}
+
+RENDER.tema = function(){
+  const el = document.getElementById('page-tema');
+  const temas=[
+    {k:'biru_tua',n:'Biru Tua Instansi',c:'#0d3b66'},
+    {k:'hijau_toska',n:'Hijau Toska',c:'#0f5257'},
+    {k:'maroon',n:'Maroon Elegan',c:'#6a1b2a'},
+    {k:'biru_cerah',n:'Biru Cerah Modern',c:'#2563eb'},
+    {k:'slate',n:'Slate Netral',c:'#1e293b'},
+  ];
+  const cur = APP.sekolah?.tema_warna||'biru_tua';
+  el.innerHTML = `
+    <h5 class="fw-bold mb-3">Tema Warna</h5>
+    <div class="row g-3">
+      ${temas.map(t=>`<div class="col-md-4">
+        <div class="card p-3 ${t.k===cur?'border-2':''}" style="cursor:pointer;${t.k===cur?'border-color:'+t.c:''}" onclick="pilihTema('${t.k}')">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width:44px;height:44px;border-radius:10px;background:${t.c}"></div>
+            <div><div class="fw-semibold">${t.n}</div>
+            ${t.k===cur?'<small class="text-success"><i class="bi bi-check-circle-fill"></i> Aktif</small>':'<small class="text-muted">Klik untuk pilih</small>'}</div>
+          </div>
+        </div></div>`).join('')}
+    </div>`;
+};
+async function pilihTema(k){
+  if(!isAdmin()) return;
+  document.body.setAttribute('data-tema',k);
+  await sb.from('profil_sekolah').update({tema_warna:k}).eq('id',1);
+  APP.sekolah.tema_warna=k; RENDER.tema(); toast('Tema diterapkan.');
+}
+
+/* ================= app-trx.js ================= */
+let _modal=null;
+function showModal(title, bodyHtml, onSave, size=''){
+  const host=document.getElementById('modalHost');
+  host.innerHTML=`
+   <div class="modal fade" tabindex="-1" id="theModal">
+    <div class="modal-dialog ${size} modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header"><h6 class="modal-title fw-bold">${title}</h6>
+          <button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">${bodyHtml}</div>
+        <div class="modal-footer">
+          <button class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+          ${onSave? '<button class="btn btn-brand" id="modalSave">Simpan</button>':''}
+        </div>
+      </div>
+    </div></div>`;
+  _modal=new bootstrap.Modal(document.getElementById('theModal'));
+  _modal.show();
+  if(onSave){
+    document.getElementById('modalSave').addEventListener('click', async ()=>{
+      const btn=document.getElementById('modalSave'); btn.disabled=true;
+      const res=await onSave();
+      btn.disabled=false;
+      if(res!==false) _modal.hide();
+    });
+  }
+}
+
+let TRX_ITEMS=[];
+
+async function formTransaksi(id){
+  if(!isAdmin()) return;
+  let trx={}, items=[];
+  let nextNo = (APP.cache.transaksi.reduce((m,t)=>Math.max(m,t.no_urut),0)||0)+1;
+  if(id){
+    trx = APP.cache.transaksi.find(t=>t.id===id)||{};
+    const {data}=await sb.from('transaksi_item').select('*').eq('transaksi_id',id).order('urutan');
+    items=data||[];
+  }
+  TRX_ITEMS = items.length? items.map(i=>({barang:i.barang,banyaknya:i.banyaknya,satuan:i.satuan,harga_satuan:i.harga_satuan})) : [{barang:'',banyaknya:1,satuan:'Buah',harga_satuan:0}];
+
+  const optKat = APP.cache.kategori.filter(k=>k.aktif).map(k=>`<option value="${k.id}" ${trx.kategori_id===k.id?'selected':''}>${esc(k.nama)}</option>`).join('');
+  const optToko= APP.cache.toko.map(t=>`<option value="${t.id}" ${trx.toko_id===t.id?'selected':''}>${esc(t.nama_toko)}</option>`).join('');
+  const optPaj = APP.cache.pajak.filter(p=>p.aktif).map(p=>`<option value="${p.persen}" ${Number(trx.tarif_pajak_persen)===Number(p.persen)?'selected':''}>${esc(p.nama)} (${(p.persen*100)}%)</option>`).join('');
+
+  const body=`
+    <div class="row">
+      <div class="col-md-3 mb-3"><label class="form-label small fw-semibold">No. Urut</label>
+        <input type="number" class="form-control" id="t-no" value="${trx.no_urut||nextNo}"></div>
+      <div class="col-md-5 mb-3"><label class="form-label small fw-semibold">Kategori</label>
+        <select class="form-select" id="t-kat">${optKat}</select></div>
+      <div class="col-md-4 mb-3"><label class="form-label small fw-semibold">Toko / Rekanan</label>
+        <select class="form-select" id="t-toko"><option value="">— tidak ada —</option>${optToko}</select></div>
+      <div class="col-12 mb-3"><label class="form-label small fw-semibold">Uraian / Tujuan Kegiatan</label>
+        <textarea class="form-control" id="t-uraian" rows="2">${esc(trx.uraian||'')}</textarea></div>
+    </div>
+
+    <div class="border rounded p-2 mb-3">
+      <div class="fw-semibold small text-muted mb-1">Data Pemeriksa (untuk Berita Acara)</div>
+      <div class="row">
+        <div class="col-md-6 mb-2"><input class="form-control form-control-sm" id="t-pemeriksa" placeholder="Nama Pemeriksa (mis. ZUL FIKAR)" value="${esc(trx.nama_pemeriksa||'')}"></div>
+        <div class="col-md-6 mb-2"><input class="form-control form-control-sm" id="t-jabpem" placeholder="Jabatan Pemeriksa" value="${esc(trx.jabatan_pemeriksa||'P2SP SMKN 3 Kepulauan Selayar')}"></div>
+      </div>
+    </div>
+
+    <div class="border rounded p-2 mb-3">
+      <div class="fw-semibold small text-muted mb-1">Pajak (untuk Kuitansi Upah/Honor)</div>
+      <div class="row align-items-center">
+        <div class="col-md-6 mb-2"><label class="form-label small">Tarif Pajak</label>
+          <select class="form-select form-select-sm" id="t-pajak"><option value="0">Tanpa Pajak</option>${optPaj}</select></div>
+        <div class="col-md-6 mb-2"><small class="text-muted"><i class="bi bi-info-circle me-1"></i>Nama penerima kuitansi otomatis diambil dari <b>Pimpinan</b> pada Toko/Rekanan yang dipilih.</small></div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-1">
+      <div class="fw-semibold small">Rincian Item</div>
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="tambahItem()"><i class="bi bi-plus"></i> Item</button>
+    </div>
+    <div class="table-responsive"><table class="table table-sm align-middle">
+      <thead><tr><th style="width:34%">Barang</th><th style="width:12%">Qty</th><th style="width:14%">Satuan</th><th style="width:18%">Harga</th><th style="width:18%">Jumlah</th><th></th></tr></thead>
+      <tbody id="itemRows"></tbody>
+      <tfoot><tr><td colspan="4" class="text-end fw-bold">TOTAL</td><td class="fw-bold" id="itemTotal">Rp 0</td><td></td></tr></tfoot>
+    </table></div>
+
+    <div class="row">
+      <div class="col-md-4 mb-2"><label class="form-label small">Tgl Nota</label><input type="date" class="form-control form-control-sm" id="t-tgl_nota" value="${trx.tgl_nota||''}"></div>
+      <div class="col-md-4 mb-2"><label class="form-label small">Tgl Faktur</label><input type="date" class="form-control form-control-sm" id="t-tgl_faktur" value="${trx.tgl_faktur||''}"></div>
+      <div class="col-md-4 mb-2"><label class="form-label small">Tgl BA Pemeriksaan</label><input type="date" class="form-control form-control-sm" id="t-tgl_ba_periksa" value="${trx.tgl_ba_periksa||''}"></div>
+      <div class="col-md-4 mb-2"><label class="form-label small">Tgl BA Serah Terima</label><input type="date" class="form-control form-control-sm" id="t-tgl_ba_serah" value="${trx.tgl_ba_serah||''}"></div>
+      <div class="col-md-4 mb-2"><label class="form-label small">Tgl Kuitansi</label><input type="date" class="form-control form-control-sm" id="t-tgl_kuitansi" value="${trx.tgl_kuitansi||''}"></div>
+      <div class="col-md-4 mb-2"><label class="form-label small">Tgl Lunas</label><input type="date" class="form-control form-control-sm" id="t-tgl_lunas" value="${trx.tgl_lunas||''}"></div>
+    </div>
+    <div class="border rounded p-2 mb-1">
+      <div class="fw-semibold small text-muted mb-1">Untuk Buku Kas Umum (BKU)</div>
+      <div class="row">
+        <div class="col-md-4 mb-2"><label class="form-label small">No. Bukti (BKU)</label><input class="form-control form-control-sm" id="t-no_bukti" value="${esc(trx.no_bukti||'')}" placeholder="mis. 001"></div>
+        <div class="col-md-8 mb-2"><label class="form-label small">Link Scan Bukti (Google Drive)</label><input class="form-control form-control-sm" id="t-link_bukti" value="${esc(trx.link_bukti||'')}" placeholder="https://drive.google.com/..."></div>
+      </div>
+    </div>`;
+
+  showModal((id?'Edit':'Tambah')+' Transaksi', body, ()=>simpanTransaksi(id), 'modal-xl');
+  drawItems();
+}
+
+function drawItems(){
+  const tb=document.getElementById('itemRows');
+  tb.innerHTML=TRX_ITEMS.map((it,i)=>`
+    <tr data-i="${i}">
+      <td><input class="form-control form-control-sm" data-k="barang" value="${esc(it.barang)}"></td>
+      <td><input type="number" step="any" class="form-control form-control-sm" data-k="banyaknya" value="${it.banyaknya}"></td>
+      <td><input class="form-control form-control-sm" data-k="satuan" value="${esc(it.satuan)}"></td>
+      <td><input type="number" step="any" class="form-control form-control-sm" data-k="harga_satuan" value="${it.harga_satuan}"></td>
+      <td class="fw-semibold jml-cell">${rp((Number(it.banyaknya)||0)*(Number(it.harga_satuan)||0))}</td>
+      <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusItem(${i})"><i class="bi bi-x"></i></button></td>
+    </tr>`).join('');
+  tb.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const tr=e.target.closest('tr'); const i=+tr.dataset.i; const k=e.target.dataset.k;
+      TRX_ITEMS[i][k]=(k==='barang'||k==='satuan')? e.target.value : Number(e.target.value);
+      tr.querySelector('.jml-cell').textContent = rp((Number(TRX_ITEMS[i].banyaknya)||0)*(Number(TRX_ITEMS[i].harga_satuan)||0));
+      updateTotal();
+    });
+  });
+  updateTotal();
+}
+function updateTotal(){
+  const total=TRX_ITEMS.reduce((a,b)=>a+(Number(b.banyaknya)||0)*(Number(b.harga_satuan)||0),0);
+  const el=document.getElementById('itemTotal'); if(el) el.textContent=rp(total);
+}
+function tambahItem(){ TRX_ITEMS.push({barang:'',banyaknya:1,satuan:'Buah',harga_satuan:0}); drawItems(); }
+function hapusItem(i){ TRX_ITEMS.splice(i,1); if(!TRX_ITEMS.length) tambahItem(); else drawItems(); }
+
+async function simpanTransaksi(id){
+  const g=(x)=>document.getElementById('t-'+x).value;
+  const total=TRX_ITEMS.reduce((a,b)=>a+(Number(b.banyaknya)||0)*(Number(b.harga_satuan)||0),0);
+  const tarif=Number(g('pajak'))||0;
+  const tokoId = g('toko')?Number(g('toko')):null;
+  const tokoSel = APP.cache.toko.find(t=>t.id===tokoId);
+  const header={
+    no_urut:Number(g('no'))||1,
+    kategori_id:Number(g('kat'))||null,
+    toko_id:tokoId,
+    uraian:g('uraian').trim()||null,
+    nama_pemeriksa:g('pemeriksa').trim()||null,
+    jabatan_pemeriksa:g('jabpem').trim()||null,
+    nama_penerima: tokoSel? (tokoSel.pimpinan||null) : null,
+    jabatan_penerima: tokoSel? 'Pimpinan Rekanan' : null,
+    tarif_pajak_persen:tarif,
+    nilai_pajak:Math.round(total*tarif),
+    tgl_nota:g('tgl_nota')||null, tgl_faktur:g('tgl_faktur')||null,
+    tgl_ba_periksa:g('tgl_ba_periksa')||null, tgl_ba_serah:g('tgl_ba_serah')||null,
+    tgl_kuitansi:g('tgl_kuitansi')||null, tgl_lunas:g('tgl_lunas')||null,
+    no_bukti:g('no_bukti').trim()||null, link_bukti:g('link_bukti').trim()||null,
+  };
+  const clean=TRX_ITEMS.filter(i=>i.barang.trim());
+  if(!clean.length){ toast('Minimal 1 item dengan nama barang.','danger'); return false; }
+
+  let trxId=id;
+  if(id){
+    const {error}=await sb.from('transaksi').update(header).eq('id',id);
+    if(error){ toast('Gagal: '+error.message,'danger'); return false; }
+    await sb.from('transaksi_item').delete().eq('transaksi_id',id);
+  }else{
+    const {data,error}=await sb.from('transaksi').insert(header).select().single();
+    if(error){ toast('Gagal: '+error.message,'danger'); return false; }
+    trxId=data.id;
+  }
+  const rows=clean.map((it,idx)=>({transaksi_id:trxId,barang:it.barang.trim(),banyaknya:Number(it.banyaknya)||0,satuan:it.satuan||'Buah',harga_satuan:Number(it.harga_satuan)||0,urutan:idx}));
+  const {error:e2}=await sb.from('transaksi_item').insert(rows);
+  if(e2){ toast('Item gagal: '+e2.message,'danger'); return false; }
+  await loadAll(); RENDER.transaksi(); toast('Transaksi disimpan.'); return true;
+}
+
+/* ===== CETAK DOKUMEN ===== */
+async function pilihCetak(id){
+  const t=APP.cache.transaksi.find(x=>x.id===id);
+  const kat=APP.cache.kategori.find(k=>k.id===t.kategori_id)||{};
+  const map=[
+    ['dok_kuitansi_toko','kuitansi_toko','Kuitansi Toko'],
+    ['dok_kuitansi_upah','kuitansi_upah','Kuitansi Upah/Honor'],
+    ['dok_nota','nota','Nota Pesanan'],
+    ['dok_faktur','faktur','Faktur'],
+    ['dok_ba_periksa','ba_periksa','BA Pemeriksaan'],
+    ['dok_ba_serah','ba_serah','BA Serah Terima'],
+  ].filter(m=>kat[m[0]]);
+  const body=`
+    <p class="small text-muted">Pilih dokumen yang akan dicetak untuk transaksi <b>${pad3(t.no_urut)}</b>:</p>
+    ${map.map(m=>`<div class="form-check"><input class="form-check-input" type="checkbox" id="ck-${m[1]}" checked><label class="form-check-label" for="ck-${m[1]}">${m[2]}</label></div>`).join('')}
+    ${map.length? '':'<div class="alert alert-warning py-2">Kategori ini belum punya dokumen aktif.</div>'}`;
+  showModal('Cetak Dokumen', body, async ()=>{
+    const chosen=map.filter(m=>document.getElementById('ck-'+m[1]).checked).map(m=>m[1]);
+    if(!chosen.length){ toast('Pilih minimal 1 dokumen.','danger'); return false; }
+    await renderCetak(id, chosen);
+    return true;
+  });
+}
+
+async function renderCetak(id, jenisList){
+  const t=APP.cache.transaksi.find(x=>x.id===id);
+  const {data:items}=await sb.from('transaksi_item').select('*').eq('transaksi_id',id).order('urutan');
+  const s=APP.sekolah||{};
+  const total=(items||[]).reduce((a,b)=>a+(Number(b.jumlah)||0),0);
+  const toko=t.toko||{};
+  const ctx={t,items:items||[],s,total,toko};
+  const area=document.getElementById('printArea');
+  document.body.classList.remove('print-bku');
+  area.innerHTML=jenisList.map(j=>DOK[j](ctx)).join('');
+  setTimeout(()=>window.print(), 300);
+}
+
+function kop(s){
+  return `<div class="kop">
+    <div>${s.logo_pemerintah_url?`<img src="${s.logo_pemerintah_url}">`:''}</div>
+    <div class="ket">
+      <div class="l1">${esc(s.baris_kop_1||'')}</div>
+      <div class="l1">${esc(s.baris_kop_2||'')}</div>
+      <div class="l1">${esc(s.baris_kop_3||'')}</div>
+      <div class="l-sek">${esc(s.nama_sekolah_kop||'UPT. SMK NEGERI 3 SELAYAR')}</div>
+      <div class="l-alamat">${esc(s.alamat_sekolah||'')}</div>
+      <div class="l-alamat">E-mail : ${esc(s.email_sekolah||'')}</div>
+    </div>
+    <div>${s.logo_sekolah_url?`<img src="${s.logo_sekolah_url}">`:''}</div>
+  </div>`;
+}
+function ttdBlok(kiriJab,kiriNama,kananJab,kananNama){
+  const nmBlok=(raw)=>{
+    const parts=(raw||'..............').split('\n');
+    const nama=esc(parts[0]);
+    const suf=parts[1]?('<br>'+esc(parts[1])):'';
+    return `<div class="nm">${nama}</div>${suf}`;
+  };
+  const jab=(raw)=>esc(raw).replace(/\n/g,'<br>');
+  return `<div class="ttd-row">
+    <div class="ttd"><div>${jab(kiriJab)}</div>${nmBlok(kiriNama)}</div>
+    <div class="ttd"><div>${jab(kananJab)}</div>${nmBlok(kananNama)}</div>
+  </div>`;
+}
+
+const DOK={};
+
+function infoRow(label, isi, boldLabel, boldIsi){
+  const L = boldLabel? `<b>${esc(label)}</b>` : esc(label);
+  const I = boldIsi? `<b>${esc(isi)}</b>` : esc(isi);
+  return `<tr><td style="width:110px">${L}</td><td style="width:12px">:</td><td>${I}</td></tr>`;
+}
+
+DOK.nota=({t,items,s})=>`
+<div class="doc">${kop(s)}
+  <h3>NOTA PESANAN</h3>
+  <div style="text-align:center">No. ${nomorDok('nota',t.no_urut)}</div>
+  <table class="info-list" style="margin-top:8px">
+    ${infoRow('Dari','P2SP Banper Revit '+(s.nama_sekolah||''))}
+    ${infoRow('Alamat', s.alamat_sekolah||'')}
+    ${infoRow('Kepada Yth.','Pimpinan '+(t.toko?.nama_toko||''),true,true)}
+    <tr><td></td><td></td><td>${esc(t.toko?.alamat||'')}</td></tr>
+    <tr><td></td><td></td><td>HP. No. ${esc(t.toko?.no_hp||'')}</td></tr>
+  </table>
+  <p style="margin:8px 0">Kiranya dapat melayani Pesanan kami berupa barang/bahan/pekerjaan tersebut di bawah ini:</p>
+  ${tabelItemHarga(items)}
+  <p style="margin-top:8px">Demikian Nota Pesanan ini, untuk dilaksanakan sebagaimana mestinya.</p>
+  <table style="width:100%;margin-top:18px"><tr>
+    <td style="width:50%;vertical-align:top;text-align:left">Pelaksana/Rekanan/Toko</td>
+    <td style="width:50%;vertical-align:top;text-align:left">${esc(s.kota_ttd||'Benteng')}, ${fmtTgl(t.tgl_nota)}<br>P2SP ${esc(s.nama_sekolah||'')},</td>
+  </tr><tr>
+    <td style="vertical-align:top;text-align:left;padding-top:52px"><span class="nm">${esc(t.toko?.pimpinan||'')}</span><br>Pimpinan</td>
+    <td style="vertical-align:top;text-align:left;padding-top:52px"><span class="nm">${esc(s.ketua_p2sp||'')}</span><br>Ketua P2SP</td>
+  </tr></table>
+</div>`;
+
+DOK.faktur=({t,items,s,total,toko})=>`
+<div class="doc">
+  <div style="text-align:center"><span style="font-size:19pt;font-weight:bold;text-decoration:underline">${esc(toko.nama_toko||'')}</span><br>
+    <i>Alamat: ${esc(toko.alamat||'')}</i></div>
+  <div style="border-bottom:2px solid #000;margin:4px 0 6px"></div>
+  <h3 style="margin-top:0">FAKTUR BARANG</h3>
+  <div style="text-align:center;margin-bottom:6px">No. ${nomorDok('faktur',t.no_urut)}</div>
+  <table class="info-list">
+    <tr><td style="width:90px">Costumer</td><td></td><td></td></tr>
+    ${infoRow('Kepada Yth.','P2SP Banper Revit '+(s.nama_sekolah||''))}
+    ${infoRow('Alamat', s.alamat_sekolah||'')}
+    ${infoRow('Telepon','-')}
+  </table>
+  <p style="margin:8px 0">Bersama ini kami sampaikan kepada Bapak, barang/bahan/pekerjaan sesuai Nota Pesanan yang dialamatkan kepada kami sebagai berikut :</p>
+  ${tabelItemHarga(items,total)}
+  <p><i>Terbilang : ${terbilang(total)}.</i></p>
+  <table style="width:100%;margin-top:14px"><tr>
+    <td style="width:55%"></td>
+    <td style="width:45%;text-align:left">${esc(s.kota_ttd||'Benteng')}, ${fmtTgl(t.tgl_faktur)}<br>Pelaksana/Rekanan/Toko</td>
+  </tr><tr>
+    <td></td>
+    <td style="text-align:left;padding-top:52px"><span class="nm">${esc(toko.pimpinan||'')}</span><br>Pimpinan</td>
+  </tr></table>
+</div>`;
+
+DOK.ba_periksa=({t,items,s,total})=>`
+<div class="doc">${kop(s)}
+  <h3>BERITA ACARA PEMERIKSAAN BARANG</h3>
+  <div style="text-align:center">NO. ${nomorDok('ba_periksa',t.no_urut)}</div>
+  <p style="margin-top:8px;text-indent:28px">Pada hari ini ${hariTgl(t.tgl_ba_periksa)} kami yang bertanda tangan di bawah ini :</p>
+  <table class="info-list">
+    ${infoRow('Nama', t.nama_pemeriksa||'')}
+    ${infoRow('Jabatan', t.jabatan_pemeriksa||'')}
+  </table>
+  <p style="margin:8px 0;text-indent:28px">Selaku ${esc(t.jabatan_pemeriksa||'P2SP')} dan telah memeriksa barang dengan teliti sebagaimana daftar di bawah ini yang diserahkan oleh ${esc(t.toko?.nama_toko?('Toko '+t.toko.nama_toko):'Rekanan')}, dengan kesimpulan barang baik dan cukup sesuai surat Pesanan.</p>
+  ${tabelItemHarga(items,total)}
+  <p><i>Terbilang : ${terbilang(total)}.</i></p>
+  <p style="text-indent:28px">Demikian Berita Acara Pemeriksaan Barang ini dibuat untuk dipergunakan sebagaimana mestinya.</p>
+  ${ttdBlok('Yang Menerima,\n'+(t.jabatan_pemeriksa||''), t.nama_pemeriksa, 'Yang Menyerahkan,\nRekanan/Toko', t.toko?.pimpinan)}
+</div>`;
+
+DOK.ba_serah=({t,items,s})=>`
+<div class="doc">${kop(s)}
+  <h3>BERITA ACARA SERAH TERIMA BARANG</h3>
+  <div style="text-align:center">NO. ${nomorDok('ba_serah',t.no_urut)}</div>
+  <p style="margin-top:8px;text-indent:28px">Pada hari ini ${hariTgl(t.tgl_ba_serah)} kami yang bertanda tangan di bawah ini :</p>
+  <table class="info-list" style="margin-left:14px">
+    <tr><td style="width:20px">1.</td><td style="width:120px">${esc(t.toko?.pimpinan||'')}</td><td style="width:12px">:</td><td>Pimpinan ${esc(t.toko?.nama_toko||'')}</td></tr>
+    <tr><td></td><td></td><td></td><td>Sebagai Pihak Pertama</td></tr>
+    <tr><td style="vertical-align:top">2.</td><td style="width:150px;vertical-align:top">${esc(t.nama_pemeriksa||'')}</td><td style="vertical-align:top">:</td><td>${esc(t.jabatan_pemeriksa||'')}</td></tr>
+    <tr><td></td><td></td><td></td><td>Sebagai Pihak Kedua</td></tr>
+  </table>
+  <p style="margin:8px 0;text-indent:28px">Berdasarkan Nota Pesanan Barang ${nomorDok('nota',t.no_urut)} Tanggal ${fmtTgl(t.tgl_nota)}, Maka dengan ini PIHAK PERTAMA menyerahkan kepada PIHAK KEDUA dan PIHAK KEDUA menerima dengan keadaan BAIK dan CUKUP barang/bahan/pekerjaan seperti dibawah ini :</p>
+  ${tabelItemKeterangan(items)}
+  <p style="text-indent:28px">Demikian Berita Acara Serah Terima Barang ini dibuat untuk dipergunakan sebagaimana mestinya.</p>
+  ${ttdBlok('Yang Menerima,\nPIHAK KEDUA', t.nama_pemeriksa, 'Yang Menyerahkan,\nPIHAK PERTAMA', t.toko?.pimpinan)}
+  <table style="width:100%;margin-top:16px"><tr>
+    <td style="width:30%"></td>
+    <td style="width:40%;text-align:left">Mengetahui/Menyetujui :<br>P2SP ${esc(s.nama_sekolah||'')},<div style="height:52px"></div><span class="nm">${esc(s.ketua_p2sp||'')}</span><br>Ketua P2SP</td>
+    <td style="width:30%"></td>
+  </tr></table>
+</div>`;
+
+DOK.kuitansi_toko=(ctx)=>kuitansi(ctx,'toko');
+DOK.kuitansi_upah=(ctx)=>kuitansi(ctx,'upah');
+function kuitansi({t,s,total},mode){
+  const penerimaNama = t.toko?.pimpinan || t.nama_penerima || '';
+  const penerimaJab  = mode==='upah'? (t.jabatan_penerima||'Pimpinan Rekanan') : 'Pimpinan Rekanan';
+  return `
+<div class="doc">${kop(s)}
+  <table class="info-list" style="margin-top:10px;width:100%">
+    <tr><td style="width:130px">Tahun Anggaran</td><td style="width:12px">:</td><td>${esc(s.tahun_anggaran||'')}</td></tr>
+    <tr><td>No. Kuitansi</td><td>:</td><td>${nomorDok(mode==='upah'?'kuitansi_upah':'kuitansi_toko',t.no_urut)}</td></tr>
+  </table>
+  <h3 style="text-decoration:none;letter-spacing:2px;margin-top:26px">KUITANSI</h3>
+  <table class="info-list" style="margin-top:14px;width:100%">
+    <tr><td style="width:130px">Sudah Terima dari</td><td style="width:12px">:</td><td>Bendahara Banper Revitalisasi ${esc(s.nama_sekolah||'')}</td></tr>
+    <tr><td>Sebesar</td><td>:</td><td><b>${rpText(total)}</b></td></tr>
+    <tr><td style="vertical-align:middle">Terbilang Rupiah</td><td style="vertical-align:middle">:</td>
+      <td><div style="border:1px solid #000;background:repeating-linear-gradient(45deg,#eeeeee,#eeeeee 4px,#ffffff 4px,#ffffff 9px);padding:5px 12px;font-style:italic;font-weight:bold;margin-right:1cm">${terbilang(total)}</div></td></tr>
+    <tr><td style="vertical-align:top"><i>Untuk</i></td><td style="vertical-align:top">:</td><td>${esc(t.uraian||'')}${t.uraian?' berdasarkan Nota Pesanan Nomor: '+nomorDok('nota',t.no_urut)+' Tanggal: '+fmtTgl(t.tgl_nota)+' dan bukti dukung lainnya terlampir.':''}</td></tr>
+  </table>
+  <table style="width:100%;margin-top:22px"><tr>
+    <td style="width:48%"></td>
+    <td style="width:4%"></td>
+    <td style="width:48%;text-align:left">${esc(s.kota_ttd||'Benteng')}, ${fmtTgl(t.tgl_kuitansi)}<br>Penerima,<div style="height:44px"></div><span class="nm">${esc(penerimaNama)}</span><br>${esc(penerimaJab)}</td>
+  </tr></table>
+  <table style="width:100%;margin-top:32px"><tr>
+    <td style="width:48%;vertical-align:top;text-align:left">Menyetujui:<br>P2SP ${esc(s.nama_sekolah||'')},<div style="height:82px"></div><span class="nm">${esc(s.ketua_p2sp||'')}</span><br>Ketua P2SP</td>
+    <td style="width:4%"></td>
+    <td style="width:48%;vertical-align:top;text-align:left">Lunas Bayar: ${fmtTgl(t.tgl_lunas)}<br>Bendahara Banper Revit<br>${esc(s.nama_sekolah||'')}<div style="height:60px"></div><span class="nm">${esc(s.bendahara||'')}</span><br>NIP. ${esc(s.nip_bendahara||'')}</td>
+  </tr></table>
+</div>`;
+}
+
+function rpCell(n){ return `<div class="rpcell"><span class="sym">Rp</span><span class="val">${num(n)}</span></div>`; }
+function rpText(n){ return 'Rp. '+num(n); }
+
+function tabelItemHarga(items, total){
+  const rows=items.map((it,i)=>`<tr>
+    <td style="text-align:center">${i+1}</td><td>${esc(it.barang)}</td>
+    <td style="text-align:center">${num(it.banyaknya)}</td><td style="text-align:center">${esc(it.satuan)}</td>
+    <td>${rpCell(it.harga_satuan)}</td><td>${rpCell(it.jumlah)}</td></tr>`).join('');
+  const foot= total!=null? `<tr><td colspan="5" style="text-align:right"><b>JUMLAH</b></td><td><div class="rpcell"><span class="sym"><b>Rp</b></span><span class="val"><b>${num(total)}</b></span></div></td></tr>`:'';
+  return `<table class="items"><thead><tr><th style="width:6%">No</th><th>Jenis Barang</th><th style="width:12%">Jumlah</th><th style="width:12%">Satuan</th><th style="width:18%">Harga Satuan</th><th style="width:18%">Total Harga</th></tr></thead><tbody>${rows}${foot}</tbody></table>`;
+}
+function tabelItemKeterangan(items){
+  const rows=items.map((it,i)=>`<tr><td style="text-align:center">${i+1}</td><td>${esc(it.barang)}</td>
+    <td style="text-align:center">${num(it.banyaknya)}</td><td style="text-align:center">${esc(it.satuan)}</td><td></td></tr>`).join('');
+  return `<table class="items"><thead><tr><th style="width:6%">No</th><th>Jenis Barang</th><th style="width:14%">Jumlah</th><th style="width:14%">Satuan</th><th style="width:26%">Keterangan</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function hariTgl(d){
+  if(!d) return '.....................';
+  const t=new Date(d+'T00:00');
+  const hari=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][t.getDay()];
+  const ang=['','satu','dua','tiga','empat','lima','enam','tujuh','delapan','sembilan','sepuluh','sebelas','dua belas','tiga belas','empat belas','lima belas','enam belas','tujuh belas','delapan belas','sembilan belas','dua puluh','dua puluh satu','dua puluh dua','dua puluh tiga','dua puluh empat','dua puluh lima','dua puluh enam','dua puluh tujuh','dua puluh delapan','dua puluh sembilan','tiga puluh','tiga puluh satu'];
+  const bln=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][t.getMonth()];
+  const tc=(s)=>s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+  return `${hari} Tanggal ${tc(ang[t.getDate()])} Bulan ${bln} Tahun ${terbilang(t.getFullYear()).replace(' Rupiah','')}`;
+}
+
+</script>
+</body>
+</html>
