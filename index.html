@@ -34,6 +34,8 @@
   .page.active{ display:block; }
   .login-wrap{ min-height:100vh; display:grid; place-items:center; background:linear-gradient(135deg,var(--brand),var(--brand-dark)); }
   .login-card{ width:100%; max-width:400px; }
+  body.mode-publik button[onclick^="cetak"]{ display:none !important; }
+  body.mode-publik .nip-col{ display:none !important; }
 
   /* ===== CETAK ===== */
   @media screen{ .print-area{ display:none; } }
@@ -50,7 +52,7 @@
   .doc{ font-family:"Times New Roman",serif; color:#000; font-size:12pt; border:1.5px solid #000;
         padding:16px 18px; margin:0 auto 20px; background:#fff; box-sizing:border-box;
         width:195mm; min-height:277mm; }
-  @media print{ .doc{ width:auto; min-height:calc(297mm - 20mm - 4px); margin:0; } }
+  @media print{ .doc{ width:auto; min-height:calc(290mm - 25mm - 4px); margin:0; } }
   .doc.bku-print{ border:none; padding:0; min-height:auto; }
   @media print{ .doc.bku-print{ min-height:auto; } }
   .doc .kop{ display:grid; grid-template-columns:90px 1fr 90px; align-items:center; border-bottom:2.5px solid #000; padding-bottom:6px; }
@@ -79,7 +81,8 @@
   <div class="card login-card shadow-lg border-0">
     <div class="card-body p-4">
       <div class="text-center mb-3">
-        <i class="bi bi-buildings" style="font-size:2.5rem; color:var(--brand);"></i>
+        <img id="loginLogo" src="" alt="" style="height:64px;display:none">
+        <i id="loginLogoFallback" class="bi bi-buildings" style="font-size:2.5rem; color:var(--brand);"></i>
         <h5 class="fw-bold mt-2 mb-0">Aplikasi LPJ Revitalisasi</h5>
         <small class="text-muted">SMKN 3 Kepulauan Selayar</small>
       </div>
@@ -90,7 +93,10 @@
       </div>
       <div class="mb-3">
         <label class="form-label small fw-semibold">Password</label>
-        <input type="password" id="loginPass" class="form-control" placeholder="********">
+        <div class="input-group">
+          <input type="password" id="loginPass" class="form-control" placeholder="********">
+          <button class="btn btn-outline-secondary" type="button" id="btnTogglePass" tabindex="-1"><i class="bi bi-eye"></i></button>
+        </div>
       </div>
       <button id="btnLogin" class="btn btn-brand w-100">
         <span class="spinner-border spinner-border-sm d-none" id="loginSpin"></span>
@@ -115,7 +121,15 @@
       <li><a class="nav-link active" data-page="dashboard"><i class="bi bi-grid me-2"></i>Dashboard</a></li>
       <li><a class="nav-link" data-page="transaksi"><i class="bi bi-receipt me-2"></i>Transaksi</a></li>
       <li><a class="nav-link" data-page="penerimaan"><i class="bi bi-cash-coin me-2"></i>Penerimaan</a></li>
+      <li><a class="nav-link" data-page="penarikan"><i class="bi bi-bank me-2"></i>Penarikan Kas</a></li>
+      <li><a class="nav-link" data-page="setor"><i class="bi bi-receipt-cutoff me-2"></i>Setor Pajak</a></li>
+    </ul>
+    <div class="nav-heading">Buku</div>
+    <ul class="nav flex-column">
       <li><a class="nav-link" data-page="bku"><i class="bi bi-journal-text me-2"></i>Buku Kas Umum</a></li>
+      <li><a class="nav-link" data-page="bp_bank"><i class="bi bi-bank2 me-2"></i>Bantu Bank</a></li>
+      <li><a class="nav-link" data-page="bp_tunai"><i class="bi bi-wallet2 me-2"></i>Bantu Kas Tunai</a></li>
+      <li><a class="nav-link" data-page="bp_pajak"><i class="bi bi-percent me-2"></i>Bantu Pajak</a></li>
     </ul>
     <div class="nav-heading">Master Data</div>
     <ul class="nav flex-column">
@@ -166,9 +180,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 const APP = {
   user: null, profile: null, sekolah: null,
-  cache: { kategori: [], pajak: [], toko: [], format: [], transaksi: [], penerimaan: [] }
+  cache: { kategori: [], pajak: [], toko: [], format: [], transaksi: [], penerimaan: [], penarikan: [], setor_pajak: [] }
 };
 const isAdmin = () => APP.profile?.role === 'admin';
+
+// true jika kolom scan boleh tampil: admin selalu, publik hanya jika toggle scan aktif
+function showScan(){ return isAdmin() || !!(APP.sekolah && APP.sekolah.publik_scan_aktif); }
 
 const $  = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
@@ -246,7 +263,7 @@ async function doLogout(){
 }
 
 async function loadAll(){
-  const [sek, kat, paj, tok, fmt, trx, pen] = await Promise.all([
+  const [sek, kat, paj, tok, fmt, trx, pen, tar, stp] = await Promise.all([
     sb.from('profil_sekolah').select('*').eq('id',1).single(),
     sb.from('kategori').select('*').order('urutan'),
     sb.from('tarif_pajak').select('*').order('id'),
@@ -254,6 +271,8 @@ async function loadAll(){
     sb.from('format_nomor').select('*'),
     sb.from('transaksi').select('*, kategori(nama), toko(nama_toko,pimpinan,alamat,no_hp)').order('no_urut',{ascending:false}),
     sb.from('penerimaan').select('*').order('tanggal'),
+    sb.from('penarikan').select('*').order('tanggal'),
+    sb.from('setor_pajak').select('*').order('tanggal'),
   ]);
   APP.sekolah = sek.data || {};
   APP.cache.kategori = kat.data || [];
@@ -262,6 +281,8 @@ async function loadAll(){
   APP.cache.format = fmt.data || [];
   APP.cache.transaksi = trx.data || [];
   APP.cache.penerimaan = pen.data || [];
+  APP.cache.penarikan = tar.data || [];
+  APP.cache.setor_pajak = stp.data || [];
 }
 
 function showApp(){
@@ -279,7 +300,7 @@ function showApp(){
 }
 
 function applyRoleUI(){
-  const nonAdminMenus = ['dashboard','transaksi','bku'];
+  const nonAdminMenus = ['dashboard','transaksi','bku','bp_bank','bp_tunai','bp_pajak'];
   $$('.sidebar .nav-link').forEach(a=>{
     const p = a.dataset.page;
     if(!isAdmin() && !nonAdminMenus.includes(p)) a.parentElement.style.display='none';
@@ -295,13 +316,67 @@ function goto(page){
   window.scrollTo(0,0);
 }
 
+/* ===== MODE PUBLIK (read-only, tanpa login) ===== */
+async function initPublik(){
+  document.body.classList.add('mode-publik');
+  document.getElementById('loginView').classList.add('d-none');
+  document.getElementById('appView').classList.remove('d-none');
+  // sembunyikan topbar tombol & sidebar penuh
+  document.querySelector('.topbar').style.display='none';
+  document.querySelector('.sidebar').innerHTML = `
+    <div class="brand px-3 mb-3 d-flex align-items-center gap-2 mt-2">
+      <i class="bi bi-eye fs-3"></i>
+      <div><div class="fw-bold lh-1">Transparansi Dana</div><small id="sideSchool">SMKN 3 Selayar</small></div>
+    </div>
+    <div class="nav-heading">Buku Laporan</div>
+    <ul class="nav flex-column">
+      <li><a class="nav-link active" data-page="bku"><i class="bi bi-journal-text me-2"></i>Buku Kas Umum</a></li>
+      <li><a class="nav-link" data-page="bp_bank"><i class="bi bi-bank2 me-2"></i>Bantu Bank</a></li>
+      <li><a class="nav-link" data-page="bp_tunai"><i class="bi bi-wallet2 me-2"></i>Bantu Kas Tunai</a></li>
+      <li><a class="nav-link" data-page="bp_pajak"><i class="bi bi-percent me-2"></i>Bantu Pajak</a></li>
+    </ul>`;
+  document.querySelector('.main').style.marginLeft='250px';
+  // muat data publik
+  await loadAll();
+  // cek flag aktif
+  if(!APP.sekolah || !APP.sekolah.publik_aktif){
+    document.getElementById('pages').innerHTML =
+      `<div class="alert alert-warning m-4"><i class="bi bi-lock me-2"></i>Halaman publik sedang tidak aktif.</div>`;
+    document.getElementById('sideSchool').textContent = APP.sekolah?.nama_sekolah || 'Sekolah';
+    return;
+  }
+  document.body.setAttribute('data-tema', APP.sekolah?.tema_warna || 'biru_tua');
+  document.getElementById('sideSchool').textContent = APP.sekolah?.nama_sekolah || 'Sekolah';
+  buildPages();
+  // pasang navigasi & sembunyikan tombol cetak (publik tak boleh cetak)
+  document.querySelectorAll('.sidebar .nav-link').forEach(a=>a.addEventListener('click', ()=>goto(a.dataset.page)));
+  goto('bku');
+}
+
 document.addEventListener('DOMContentLoaded', ()=>{
+  // MODE PUBLIK: ?publik=1 -> tampilkan 4 buku tanpa login
+  const params = new URLSearchParams(location.search);
+  if(params.get('publik')==='1'){ initPublik(); return; }
   $('#btnLogin').addEventListener('click', doLogin);
   $('#loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+  $('#btnTogglePass').addEventListener('click', ()=>{
+    const inp=$('#loginPass'), ic=$('#btnTogglePass i');
+    if(inp.type==='password'){ inp.type='text'; ic.className='bi bi-eye-slash'; }
+    else { inp.type='password'; ic.className='bi bi-eye'; }
+  });
   $('#btnLogout').addEventListener('click', doLogout);
   $('#btnToggle').addEventListener('click', ()=>document.body.classList.toggle('sidebar-collapsed'));
   $$('.sidebar .nav-link').forEach(a=>a.addEventListener('click', ()=>goto(a.dataset.page)));
   sb.auth.getSession().then(({data})=>{ if(data.session) afterLogin(data.session.user); });
+  
+  // muat logo sekolah untuk halaman login (tanpa perlu login)
+  sb.from('profil_sekolah').select('logo_sekolah_url').eq('id',1).single().then(({data})=>{
+    if(data && data.logo_sekolah_url){
+      const img=$('#loginLogo'), fb=$('#loginLogoFallback');
+      img.src=data.logo_sekolah_url; img.style.display='inline-block';
+      if(fb) fb.style.display='none';
+    }
+  });
 });
 
 /* ================= app-pages.js ================= */
@@ -313,7 +388,12 @@ function buildPages(){
     <div id="page-dashboard" class="page"></div>
     <div id="page-transaksi" class="page"></div>
     <div id="page-penerimaan" class="page"></div>
+    <div id="page-penarikan" class="page"></div>
+    <div id="page-setor" class="page"></div>
     <div id="page-bku" class="page"></div>
+    <div id="page-bp_bank" class="page"></div>
+    <div id="page-bp_tunai" class="page"></div>
+    <div id="page-bp_pajak" class="page"></div>
     <div id="page-toko" class="page"></div>
     <div id="page-kategori" class="page"></div>
     <div id="page-pajak" class="page"></div>
@@ -492,7 +572,203 @@ async function hapusPenerimaan(id){
   await loadAll(); RENDER.penerimaan(); toast('Penerimaan dihapus.');
 }
 
-/* ===== BUKU KAS UMUM ===== */
+/* ===== PENARIKAN KAS (bank -> tunai) ===== */
+RENDER.penarikan = function(){
+  const el = document.getElementById('page-penarikan');
+  const rows = APP.cache.penarikan||[];
+  el.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">Penarikan Kas (Bank &rarr; Tunai)</h5>
+      ${isAdmin()? `<button class="btn btn-brand btn-sm" onclick="formPenarikan()"><i class="bi bi-plus-lg me-1"></i>Tambah Penarikan</button>`:''}
+    </div>
+    <div class="alert alert-light border small mb-3"><i class="bi bi-info-circle me-1"></i>Penarikan memindahkan uang dari Bank ke Kas Tunai. Tidak mengubah saldo BKU, hanya komposisinya.</div>
+    <div class="card"><div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr><th class="ps-3">Tanggal</th><th>No. Bukti</th><th>Uraian</th><th class="text-end">Jumlah</th><th>Scan Bukti</th>${isAdmin()?'<th class="text-center">Aksi</th>':''}</tr></thead>
+        <tbody>${rows.length? rows.map(r=>`<tr>
+          <td class="ps-3">${fmtTgl(r.tanggal)}</td>
+          <td>${esc(r.no_bukti||'-')}</td>
+          <td>${esc(r.uraian||'-')}</td>
+          <td class="text-end fw-semibold">${rp(r.jumlah)}</td>
+          <td>${r.link_bukti? `<a href="${esc(r.link_bukti)}" target="_blank"><i class="bi bi-link-45deg"></i> Lihat</a>`:'-'}</td>
+          ${isAdmin()? `<td class="text-center">
+            <button class="btn btn-sm btn-outline-secondary" onclick="formPenarikan(${r.id})"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="hapusPenarikan(${r.id})"><i class="bi bi-trash"></i></button>
+          </td>`:''}
+        </tr>`).join('') : `<tr><td colspan="6" class="text-center text-muted py-4">Belum ada data penarikan.</td></tr>`}
+        </tbody>
+      </table>
+    </div></div>`;
+};
+function formPenarikan(id){
+  if(!isAdmin()) return;
+  const r = id? (APP.cache.penarikan.find(x=>x.id===id)||{}) : {};
+  const body = `
+    <div class="mb-3"><label class="form-label small fw-semibold">Tanggal</label>
+      <input type="date" class="form-control" id="tk-tanggal" value="${r.tanggal||''}"></div>
+    <div class="row">
+      <div class="col-md-4 mb-3"><label class="form-label small fw-semibold">No. Bukti</label>
+        <input class="form-control" id="tk-no_bukti" value="${esc(r.no_bukti||'')}" placeholder="mis. 001"></div>
+      <div class="col-md-8 mb-3"><label class="form-label small fw-semibold">Jumlah Ditarik (Rp)</label>
+        <input type="number" step="any" class="form-control" id="tk-jumlah" value="${r.jumlah||''}"></div>
+    </div>
+    <div class="mb-3"><label class="form-label small fw-semibold">Uraian</label>
+      <input class="form-control" id="tk-uraian" value="${esc(r.uraian||'Penarikan dana ke kas tunai')}"></div>
+    <div class="mb-2"><label class="form-label small fw-semibold">Link Scan Bukti (Google Drive)</label>
+      <input class="form-control" id="tk-link_bukti" value="${esc(r.link_bukti||'')}" placeholder="https://drive.google.com/..."></div>`;
+  showModal((id?'Edit':'Tambah')+' Penarikan Kas', body, async ()=>{
+    const payload = {
+      tanggal: document.getElementById('tk-tanggal').value||null,
+      no_bukti: document.getElementById('tk-no_bukti').value.trim()||null,
+      uraian: document.getElementById('tk-uraian').value.trim()||null,
+      jumlah: Number(document.getElementById('tk-jumlah').value)||0,
+      link_bukti: document.getElementById('tk-link_bukti').value.trim()||null,
+    };
+    if(!payload.jumlah){ toast('Jumlah wajib diisi.','danger'); return false; }
+    const q = id? sb.from('penarikan').update(payload).eq('id',id) : sb.from('penarikan').insert(payload);
+    const { error } = await q;
+    if(error){ toast('Gagal simpan: '+error.message,'danger'); return false; }
+    await loadAll(); RENDER.penarikan(); toast('Penarikan disimpan.'); return true;
+  });
+}
+async function hapusPenarikan(id){
+  if(!isAdmin()) return;
+  if(!confirm('Hapus data penarikan ini?')) return;
+  const { error } = await sb.from('penarikan').delete().eq('id',id);
+  if(error){ toast('Gagal hapus: '+error.message,'danger'); return; }
+  await loadAll(); RENDER.penarikan(); toast('Penarikan dihapus.');
+}
+
+/* ===== SETOR PAJAK ===== */
+RENDER.setor = function(){
+  const el = document.getElementById('page-setor');
+  const rows = APP.cache.setor_pajak||[];
+  const totPungut = totalPajakDipungut();
+  const totSetor = rows.reduce((a,b)=>a+(Number(b.jumlah)||0),0);
+  const saldoPajak = totPungut - totSetor;
+  el.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">Setor Pajak</h5>
+      ${isAdmin()? `<button class="btn btn-brand btn-sm" onclick="formSetor()"><i class="bi bi-plus-lg me-1"></i>Tambah Setoran</button>`:''}
+    </div>
+    <div class="row g-3 mb-3">
+      ${statCard('Total Dipungut', rp(totPungut), 'bi-arrow-down-circle', 'info')}
+      ${statCard('Total Disetor', rp(totSetor), 'bi-arrow-up-circle', 'success')}
+      ${statCard('Belum Disetor', rp(saldoPajak), 'bi-exclamation-circle', saldoPajak>0?'warning':'secondary')}
+    </div>
+    <div class="card"><div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr><th class="ps-3">Tanggal</th><th>No. Bukti/NTPN</th><th>Uraian</th><th class="text-end">Jumlah</th><th>Scan Bukti</th>${isAdmin()?'<th class="text-center">Aksi</th>':''}</tr></thead>
+        <tbody>${rows.length? rows.map(r=>`<tr>
+          <td class="ps-3">${fmtTgl(r.tanggal)}</td>
+          <td>${esc(r.no_bukti||'-')}</td>
+          <td>${esc(r.uraian||'-')}</td>
+          <td class="text-end fw-semibold">${rp(r.jumlah)}</td>
+          <td>${r.link_bukti? `<a href="${esc(r.link_bukti)}" target="_blank"><i class="bi bi-link-45deg"></i> Lihat</a>`:'-'}</td>
+          ${isAdmin()? `<td class="text-center">
+            <button class="btn btn-sm btn-outline-secondary" onclick="formSetor(${r.id})"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="hapusSetor(${r.id})"><i class="bi bi-trash"></i></button>
+          </td>`:''}
+        </tr>`).join('') : `<tr><td colspan="6" class="text-center text-muted py-4">Belum ada setoran pajak.</td></tr>`}
+        </tbody>
+      </table>
+    </div></div>`;
+};
+function formSetor(id){
+  if(!isAdmin()) return;
+  const r = id? (APP.cache.setor_pajak.find(x=>x.id===id)||{}) : {};
+  // transaksi berpajak yang BELUM disetor (saat edit, sertakan juga yang ditutup setoran ini)
+  const idsSetoranIni = (id && r.transaksi_ids)? r.transaksi_ids.split(',').map(Number) : [];
+  const kandidat = (APP.cache.transaksi||[]).filter(t=>
+    Number(t.nilai_pajak)>0 && (!t.pajak_disetor || idsSetoranIni.includes(t.id))
+  );
+  const listHtml = kandidat.length? kandidat.map(t=>`
+    <div class="form-check">
+      <input class="form-check-input trx-pajak" type="checkbox" value="${t.id}" data-nilai="${Number(t.nilai_pajak)||0}"
+        id="cksp-${t.id}" ${idsSetoranIni.includes(t.id)?'checked':''} onchange="hitungSetorTotal()">
+      <label class="form-check-label" for="cksp-${t.id}">
+        ${esc(t.uraian||'(tanpa uraian)')} — <b>${rp(t.nilai_pajak)}</b>
+      </label>
+    </div>`).join('') : '<div class="text-muted small">Tidak ada pajak yang belum disetor.</div>';
+  const body = `
+    <div class="mb-3">
+      <label class="form-label small fw-semibold">Pilih pajak yang disetor <span class="text-danger">*</span></label>
+      <div class="border rounded p-2" style="max-height:200px;overflow:auto">${listHtml}</div>
+    </div>
+    <div class="mb-3"><label class="form-label small fw-semibold">Total Disetor (otomatis)</label>
+      <input class="form-control fw-bold" id="sp-jumlah" value="${r.jumlah||0}" readonly>
+      <input type="hidden" id="sp-ids" value="${esc(r.transaksi_ids||'')}"></div>
+    <div class="mb-3"><label class="form-label small fw-semibold">Tanggal Setor</label>
+      <input type="date" class="form-control" id="sp-tanggal" value="${r.tanggal||''}"></div>
+    <div class="row">
+      <div class="col-md-6 mb-3"><label class="form-label small fw-semibold">No. Bukti / NTPN</label>
+        <input class="form-control" id="sp-no_bukti" value="${esc(r.no_bukti||'')}"></div>
+      <div class="col-md-6 mb-3"><label class="form-label small fw-semibold">Uraian</label>
+        <input class="form-control" id="sp-uraian" value="${esc(r.uraian||'Setor pajak ke kas negara')}"></div>
+    </div>
+    <div class="mb-2"><label class="form-label small fw-semibold">Link Scan Bukti (Google Drive)</label>
+      <input class="form-control" id="sp-link_bukti" value="${esc(r.link_bukti||'')}" placeholder="https://drive.google.com/..."></div>`;
+  showModal((id?'Edit':'Tambah')+' Setoran Pajak', body, async ()=>{
+    const dicentang = [...document.querySelectorAll('.trx-pajak:checked')];
+    if(!dicentang.length){ toast('Pilih minimal 1 pajak untuk disetor.','danger'); return false; }
+    const ids = dicentang.map(c=>Number(c.value));
+    const jumlah = dicentang.reduce((a,c)=>a+(Number(c.dataset.nilai)||0),0);
+    const payload = {
+      tanggal: document.getElementById('sp-tanggal').value||null,
+      no_bukti: document.getElementById('sp-no_bukti').value.trim()||null,
+      uraian: document.getElementById('sp-uraian').value.trim()||null,
+      jumlah: jumlah,
+      link_bukti: document.getElementById('sp-link_bukti').value.trim()||null,
+      transaksi_ids: ids.join(','),
+    };
+    // saat edit: lepas dulu penanda transaksi lama yang ditutup setoran ini
+    if(id && idsSetoranIni.length){
+      await sb.from('transaksi').update({pajak_disetor:false}).in('id', idsSetoranIni);
+    }
+    const q = id? sb.from('setor_pajak').update(payload).eq('id',id) : sb.from('setor_pajak').insert(payload);
+    const { error } = await q;
+    if(error){ toast('Gagal simpan: '+error.message,'danger'); return false; }
+    // tandai transaksi terpilih sebagai sudah disetor
+    const { error:e2 } = await sb.from('transaksi').update({pajak_disetor:true}).in('id', ids);
+    if(e2){ toast('Setoran tersimpan, tapi penanda gagal: '+e2.message,'danger'); }
+    await loadAll(); RENDER.setor(); toast('Setoran pajak disimpan.'); return true;
+  });
+}
+function hitungSetorTotal(){
+  const dicentang = [...document.querySelectorAll('.trx-pajak:checked')];
+  const jumlah = dicentang.reduce((a,c)=>a+(Number(c.dataset.nilai)||0),0);
+  const el = document.getElementById('sp-jumlah'); if(el) el.value = jumlah;
+}
+async function hapusSetor(id){
+  if(!isAdmin()) return;
+  if(!confirm('Hapus setoran pajak ini?')) return;
+  const row = APP.cache.setor_pajak.find(x=>x.id===id);
+  // kembalikan status transaksi yang ditutup setoran ini
+  if(row && row.transaksi_ids){
+    const ids = row.transaksi_ids.split(',').map(Number).filter(Boolean);
+    if(ids.length) await sb.from('transaksi').update({pajak_disetor:false}).in('id', ids);
+  }
+  const { error } = await sb.from('setor_pajak').delete().eq('id',id);
+  if(error){ toast('Gagal hapus: '+error.message,'danger'); return; }
+  await loadAll(); RENDER.setor(); toast('Setoran dihapus.');
+}
+function totalPajakDipungut(){
+  return (APP.cache.transaksi||[]).reduce((a,t)=>a+(Number(t.nilai_pajak)||0),0);
+}
+
+/* ===== BUKU KAS UMUM & PEMBANTU ===== */
+// hitung komposisi saldo: bank, tunai (semua penerimaan lewat bank; semua belanja tunai)
+async function hitungSaldo(){
+  const totMasuk = (APP.cache.penerimaan||[]).reduce((a,b)=>a+(Number(b.jumlah)||0),0);
+  const totTarik = (APP.cache.penarikan||[]).reduce((a,b)=>a+(Number(b.jumlah)||0),0);
+  const { data: items } = await sb.from('transaksi_item').select('jumlah');
+  const totBelanja = (items||[]).reduce((a,b)=>a+(Number(b.jumlah)||0),0);
+  const saldoBank = totMasuk - totTarik;
+  const saldoTunai = totTarik - totBelanja;
+  const saldoBKU = saldoBank + saldoTunai;
+  return { totMasuk, totTarik, totBelanja, saldoBank, saldoTunai, saldoBKU };
+}
+
 async function bkuRows(){
   const pen = (APP.cache.penerimaan||[]).map(p=>({
     tipe:'in', tanggal:p.tanggal, uraian:p.uraian, no_bukti:p.no_bukti, jumlah:Number(p.jumlah)||0, link:p.link_bukti
@@ -514,6 +790,10 @@ RENDER.bku = async function(){
   const el = document.getElementById('page-bku');
   el.innerHTML = `<h5 class="fw-bold mb-3">Buku Kas Umum</h5><div class="text-muted">Memuat…</div>`;
   const rows = await bkuRows();
+  const komp = await hitungSaldo();
+  const warnTunai = komp.saldoTunai < 0
+    ? `<div class="alert alert-danger small mb-3"><i class="bi bi-exclamation-triangle me-1"></i>Saldo Kas Tunai <b>minus</b> (${rp(komp.saldoTunai)}). Berarti ada belanja yang uangnya belum ditarik dari bank. Tambahkan Penarikan Kas yang sesuai.</div>`
+    : '';
   let saldo = 0, totIn=0, totOut=0;
   const trBody = rows.map(r=>{
     if(r.tipe==='in'){ saldo += r.jumlah; totIn += r.jumlah; }
@@ -528,7 +808,7 @@ RENDER.bku = async function(){
       <td class="text-center">${r.tipe==='out'? esc(r.no_bukti||''):''}</td>
       <td class="text-end">${r.tipe==='out'? num(r.jumlah):''}</td>
       <td class="text-end">${num(saldo)}</td>
-      <td class="text-center">${r.link? `<a href="${esc(r.link)}" target="_blank">Lihat</a>`:''}</td>
+      ${showScan()? `<td class="text-center">${r.link? `<a href="${esc(r.link)}" target="_blank">Lihat</a>`:''}</td>`:''}
     </tr>`;
   }).join('');
 
@@ -536,6 +816,12 @@ RENDER.bku = async function(){
     <div class="d-flex justify-content-between align-items-center mb-3 no-print">
       <h5 class="fw-bold mb-0">Buku Kas Umum</h5>
       <button class="btn btn-brand btn-sm" onclick="cetakBKU()"><i class="bi bi-printer me-1"></i>Cetak BKU</button>
+    </div>
+    ${warnTunai}
+    <div class="row g-3 mb-3">
+      ${statCard('Saldo Bank', rp(komp.saldoBank), 'bi-bank2', 'primary')}
+      ${statCard('Saldo Kas Tunai', rp(komp.saldoTunai), 'bi-wallet2', komp.saldoTunai<0?'danger':'info')}
+      ${statCard('Saldo BKU', rp(komp.saldoBKU), 'bi-journal-text', 'success')}
     </div>
     <div class="card"><div class="card-body">
       <div class="alert alert-light border small mb-3">
@@ -548,7 +834,7 @@ RENDER.bku = async function(){
             <th colspan="4">PENERIMAAN</th>
             <th colspan="4">PENGELUARAN</th>
             <th rowspan="2" class="align-middle">SALDO</th>
-            <th rowspan="2" class="align-middle">SCAN BUKTI</th>
+            ${showScan()? '<th rowspan="2" class="align-middle">SCAN BUKTI</th>':''}
           </tr>
           <tr>
             <th>Tanggal</th><th>Uraian</th><th>No.Bukti</th><th>Jumlah</th>
@@ -560,7 +846,7 @@ RENDER.bku = async function(){
           <tr class="fw-bold">
             <td colspan="3" class="text-end">JUMLAH</td><td class="text-end">${num(totIn)}</td>
             <td colspan="3" class="text-end">JUMLAH</td><td class="text-end">${num(totOut)}</td>
-            <td class="text-end">${num(saldo)}</td><td></td>
+            <td class="text-end">${num(saldo)}</td>${showScan()? '<td></td>':''}
           </tr>
         </tbody>
       </table></div>
@@ -579,6 +865,7 @@ function hariTgl2(d){
 async function cetakBKU(){
   const rows = await bkuRows();
   const s = APP.sekolah||{};
+  const komp = await hitungSaldo();
   let saldo = 0, totIn=0, totOut=0;
   const body = rows.map(r=>{
     if(r.tipe==='in'){ saldo+=r.jumlah; totIn+=r.jumlah; } else { saldo-=r.jumlah; totOut+=r.jumlah; }
@@ -613,12 +900,12 @@ async function cetakBKU(){
     <div class="bku-tutup">
     <p style="margin-top:14px">Pada hari ini : ${hariTgl2(tglTutupRaw)} Buku Kas Umum ditutup dengan keadaan/posisi Buku sebagai berikut :</p>
     <table class="items" style="width:70%;margin:8px 0">
-      <tr><td style="width:55%;font-weight:bold">Saldo Buku Kas Umum</td><td>${saldo===0?'<span style="font-style:italic">Nihil</span>':`<div class="rpcell"><span class="sym">Rp</span><span class="val">${num(saldo)}</span></div>`}</td></tr>
+      <tr><td style="width:55%;font-weight:bold">Saldo Buku Kas Umum</td><td>${komp.saldoBKU===0?'<span style="font-style:italic">Nihil</span>':`<div class="rpcell"><span class="sym">Rp</span><span class="val">${num(komp.saldoBKU)}</span></div>`}</td></tr>
       <tr><td style="font-style:italic">Terdiri Dari</td><td></td></tr>
-      <tr><td style="font-style:italic">1. Saldo BANK</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">${num(saldo)}</span></div></td></tr>
-      <tr><td style="font-style:italic">2. Saldo Kas Tunai</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">0</span></div></td></tr>
-      <tr><td style="font-style:italic">Jumlah</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">${num(saldo)}</span></div></td></tr>
-      <tr><td style="font-style:italic">Perbedaan</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">0</span></div></td></tr>
+      <tr><td style="font-style:italic">1. Saldo BANK</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">${num(komp.saldoBank)}</span></div></td></tr>
+      <tr><td style="font-style:italic">2. Saldo Kas Tunai</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">${num(komp.saldoTunai)}</span></div></td></tr>
+      <tr><td style="font-style:italic">Jumlah</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">${num(komp.saldoBank+komp.saldoTunai)}</span></div></td></tr>
+      <tr><td style="font-style:italic">Perbedaan</td><td><div class="rpcell"><span class="sym">Rp</span><span class="val">${num(komp.saldoBKU-(komp.saldoBank+komp.saldoTunai))}</span></div></td></tr>
     </table>
     <table style="width:100%;margin-top:20px">
       <tr>
@@ -633,6 +920,106 @@ async function cetakBKU(){
   document.body.classList.add('print-bku');
   setTimeout(()=>{ window.print(); setTimeout(()=>document.body.classList.remove('print-bku'), 800); }, 300);
 }
+
+/* ===== BUKU PEMBANTU BANK ===== */
+// baris bank: penerimaan (dana masuk) & pengeluaran (penarikan)
+function bankRows(){
+  const masuk = (APP.cache.penerimaan||[]).map(p=>({tanggal:p.tanggal,no_bukti:p.no_bukti,uraian:p.uraian,in:Number(p.jumlah)||0,out:0}));
+  const tarik = (APP.cache.penarikan||[]).map(p=>({tanggal:p.tanggal,no_bukti:p.no_bukti,uraian:p.uraian||'Penarikan ke kas tunai',in:0,out:Number(p.jumlah)||0}));
+  return [...masuk,...tarik].sort((a,b)=>{ if(!a.tanggal)return 1; if(!b.tanggal)return -1; return new Date(a.tanggal)-new Date(b.tanggal); });
+}
+// baris tunai: penerimaan (penarikan) & pengeluaran (belanja/transaksi)
+async function tunaiRows(){
+  const tarik = (APP.cache.penarikan||[]).map(p=>({tanggal:p.tanggal,no_bukti:p.no_bukti,uraian:p.uraian||'Penarikan dari bank',in:Number(p.jumlah)||0,out:0}));
+  const { data: items } = await sb.from('transaksi_item').select('transaksi_id, jumlah');
+  const totByTrx = {};
+  (items||[]).forEach(i=>{ totByTrx[i.transaksi_id]=(totByTrx[i.transaksi_id]||0)+(Number(i.jumlah)||0); });
+  const belanja = (APP.cache.transaksi||[]).map(t=>({tanggal:t.tgl_kuitansi||t.tgl_nota,no_bukti:t.no_bukti,uraian:t.uraian,in:0,out:totByTrx[t.id]||0}));
+  return [...tarik,...belanja].sort((a,b)=>{ if(!a.tanggal)return 1; if(!b.tanggal)return -1; return new Date(a.tanggal)-new Date(b.tanggal); });
+}
+// baris pajak: dipungut (dari transaksi) & disetor (dari setor_pajak)
+function pajakRows(){
+  const pungut = (APP.cache.transaksi||[]).filter(t=>Number(t.nilai_pajak)>0).map(t=>({
+    tanggal:t.tgl_kuitansi||t.tgl_nota, no_bukti:t.no_bukti, uraian:'Pungut pajak: '+(t.uraian||''), in:Number(t.nilai_pajak)||0, out:0
+  }));
+  const setor = (APP.cache.setor_pajak||[]).map(p=>({tanggal:p.tanggal,no_bukti:p.no_bukti,uraian:p.uraian||'Setor pajak',in:0,out:Number(p.jumlah)||0}));
+  return [...pungut,...setor].sort((a,b)=>{ if(!a.tanggal)return 1; if(!b.tanggal)return -1; return new Date(a.tanggal)-new Date(b.tanggal); });
+}
+
+// render halaman buku pembantu generik (layar)
+function renderBukuPembantu(pageId, judul, rows, labelIn, labelOut, labelSaldo, cetakFn){
+  const el = document.getElementById(pageId);
+  let saldo=0, tIn=0, tOut=0;
+  const body = rows.map(r=>{ saldo += r.in - r.out; tIn+=r.in; tOut+=r.out; return `<tr>
+    <td class="ps-3">${fmtTglShort(r.tanggal)}</td><td>${esc(r.no_bukti||'')}</td><td>${esc(r.uraian||'')}</td>
+    <td class="text-end">${r.in?num(r.in):''}</td><td class="text-end">${r.out?num(r.out):''}</td>
+    <td class="text-end fw-semibold">${num(saldo)}</td></tr>`; }).join('');
+  el.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+      <h5 class="fw-bold mb-0">${judul}</h5>
+      <button class="btn btn-brand btn-sm" onclick="${cetakFn}()"><i class="bi bi-printer me-1"></i>Cetak</button>
+    </div>
+    <div class="card"><div class="table-responsive">
+      <table class="table table-bordered table-sm align-middle mb-0">
+        <thead class="text-center"><tr><th>Tanggal</th><th>No. Bukti</th><th>Uraian</th><th>${labelIn}</th><th>${labelOut}</th><th>${labelSaldo}</th></tr></thead>
+        <tbody>${rows.length? body : `<tr><td colspan="6" class="text-center text-muted py-4">Belum ada data.</td></tr>`}
+          <tr class="fw-bold"><td colspan="3" class="text-end">JUMLAH</td><td class="text-end">${num(tIn)}</td><td class="text-end">${num(tOut)}</td><td class="text-end">${num(saldo)}</td></tr>
+        </tbody>
+      </table>
+    </div></div>`;
+}
+
+// cetak buku pembantu generik (potret, tanpa bingkai, dengan KOP)
+function cetakBukuPembantu(judul, nomorKosong, rows, labelIn, labelOut, labelSaldo){
+  const s = APP.sekolah||{};
+  let saldo=0, tIn=0, tOut=0;
+  const body = rows.map(r=>{ saldo += r.in - r.out; tIn+=r.in; tOut+=r.out; return `<tr>
+    <td style="text-align:center">${fmtTglShort(r.tanggal)}</td><td style="text-align:center">${esc(r.no_bukti||'')}</td><td>${esc(r.uraian||'')}</td>
+    <td style="text-align:right">${r.in?num(r.in):''}</td><td style="text-align:right">${r.out?num(r.out):''}</td>
+    <td style="text-align:right">${num(saldo)}</td></tr>`; }).join('');
+  const tglTutupRaw = rows.filter(r=>r.tanggal).map(r=>r.tanggal).sort().pop();
+  const html = `
+  <div class="doc">${kop(s)}
+    <h3>${judul}</h3>
+    <table class="items" style="font-size:10pt">
+      <thead style="text-align:center"><tr>
+        <th style="width:12%">Tanggal</th><th style="width:12%">No. Bukti</th><th>Uraian</th>
+        <th style="width:16%">${labelIn}</th><th style="width:16%">${labelOut}</th><th style="width:16%">${labelSaldo}</th>
+      </tr></thead>
+      <tbody>
+        ${body}
+        <tr style="font-weight:bold"><td colspan="3" style="text-align:right">JUMLAH</td><td style="text-align:right">${num(tIn)}</td><td style="text-align:right">${num(tOut)}</td><td style="text-align:right">${num(saldo)}</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:12px">Pada hari ini : ${hariTgl2(tglTutupRaw)} buku ditutup dengan saldo akhir sebesar Rp ${num(saldo)} (${terbilang(saldo)}).</p>
+    <table style="width:100%;margin-top:24px"><tr>
+      <td style="width:50%"></td>
+      <td style="width:50%;text-align:left">${esc(s.kota_ttd||'Benteng')}, ${fmtTgl(tglTutupRaw)}<br>Bendahara P2SP ${esc(s.nama_sekolah||'')}<div style="height:60px"></div><span class="nm">${esc(s.bendahara||'')}</span><br>NIP. ${esc(s.nip_bendahara||'')}</td>
+    </tr></table>
+  </div>`;
+  document.getElementById('printArea').innerHTML = html;
+  document.body.classList.remove('print-bku'); // potret
+  setTimeout(()=>window.print(), 300);
+}
+
+RENDER.bp_bank = async function(){
+  document.getElementById('page-bp_bank').innerHTML = `<h5 class="fw-bold mb-3">Buku Pembantu Bank</h5><div class="text-muted">Memuat…</div>`;
+  renderBukuPembantu('page-bp_bank','Buku Pembantu Bank', bankRows(), 'Penerimaan', 'Pengeluaran', 'Saldo Bank', 'cetakBankBook');
+};
+function cetakBankBook(){ cetakBukuPembantu('BUKU PEMBANTU BANK', true, bankRows(), 'Penerimaan (Rp.)','Pengeluaran (Rp.)','Saldo Bank'); }
+
+RENDER.bp_tunai = async function(){
+  document.getElementById('page-bp_tunai').innerHTML = `<h5 class="fw-bold mb-3">Buku Pembantu Kas Tunai</h5><div class="text-muted">Memuat…</div>`;
+  const rows = await tunaiRows();
+  renderBukuPembantu('page-bp_tunai','Buku Pembantu Kas Tunai', rows, 'Penerimaan', 'Pengeluaran', 'Saldo Tunai', 'cetakTunaiBook');
+};
+async function cetakTunaiBook(){ const rows = await tunaiRows(); cetakBukuPembantu('BUKU PEMBANTU KAS TUNAI', true, rows, 'Penerimaan (Rp.)','Pengeluaran (Rp.)','Saldo Tunai'); }
+
+RENDER.bp_pajak = async function(){
+  document.getElementById('page-bp_pajak').innerHTML = `<h5 class="fw-bold mb-3">Buku Pembantu Pajak</h5><div class="text-muted">Memuat…</div>`;
+  renderBukuPembantu('page-bp_pajak','Buku Pembantu Pajak', pajakRows(), 'Dipungut', 'Disetor', 'Saldo', 'cetakPajakBook');
+};
+function cetakPajakBook(){ cetakBukuPembantu('BUKU PEMBANTU PAJAK', true, pajakRows(), 'Dipungut (Rp.)','Disetor (Rp.)','Saldo'); }
 
 /* ===== MASTER ===== */
 function masterPage(cfg){
@@ -779,6 +1166,17 @@ RENDER.profil = function(){
         ${F('tahun_anggaran','Tahun Anggaran',s.tahun_anggaran)}
         ${F('kota_ttd','Kota Tanda Tangan',s.kota_ttd)}
       </div>
+      <hr>
+      <div class="fw-semibold text-muted small mb-2">HALAMAN PUBLIK (TRANSPARANSI)</div>
+      <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" id="ps-publik_aktif" ${s.publik_aktif?'checked':''} ${isAdmin()?'':'disabled'}>
+        <label class="form-check-label" for="ps-publik_aktif">Aktifkan halaman publik (BKU & buku pembantu bisa dilihat tanpa login)</label>
+      </div>
+      <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" id="ps-publik_scan_aktif" ${s.publik_scan_aktif?'checked':''} ${isAdmin()?'':'disabled'}>
+        <label class="form-check-label" for="ps-publik_scan_aktif">Tampilkan link Scan Bukti di halaman publik (nyalakan hanya saat pemeriksaan)</label>
+      </div>
+      <div class="small text-muted mb-3">Link publik: <code>${location.origin+location.pathname}?publik=1</code></div>
       ${isAdmin()? `<button class="btn btn-brand" onclick="simpanProfil()"><i class="bi bi-save me-1"></i>Simpan Profil</button>`:'<div class="alert alert-info py-2 mb-0"><i class="bi bi-eye me-1"></i>Anda hanya dapat melihat.</div>'}
     </div></div>`;
 };
@@ -786,6 +1184,8 @@ async function simpanProfil(){
   if(!isAdmin()) return;
   const keys=['baris_kop_1','baris_kop_2','baris_kop_3','nama_sekolah_kop','nama_sekolah','alamat_sekolah','email_sekolah','kepsek','nip_kepsek','ketua_p2sp','nip_ketua_p2sp','jabatan_ketua_p2sp','bendahara','nip_bendahara','jabatan_bendahara','pangkat_bendahara','tahun_anggaran','kota_ttd'];
   const payload={}; keys.forEach(k=>payload[k]=document.getElementById('ps-'+k).value.trim()||null);
+  payload.publik_aktif = document.getElementById('ps-publik_aktif').checked;
+  payload.publik_scan_aktif = document.getElementById('ps-publik_scan_aktif').checked;
   const { error } = await sb.from('profil_sekolah').update(payload).eq('id',1);
   if(error){ toast('Gagal simpan: '+error.message,'danger'); return; }
   await loadAll(); showApp(); goto('profil'); toast('Profil disimpan.');
